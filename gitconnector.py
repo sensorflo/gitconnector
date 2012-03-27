@@ -25,8 +25,6 @@
 # a) git offers so many workflows
 #
 
-
-
 import subprocess
 import re
 import git
@@ -34,9 +32,19 @@ import git
 git_binary = "/usr/bin/git"
 default_branch = "master"
 default_origin_branch = "remotes/origin/master"
-nice_branch_regex = r'.*-nice$' 
+nice_branch_regex = r'-nice$' 
 sign_off_str = "Signed-off-by: git-dragon"
 no_verify_sign_off_str = "Signed-off-by: git-dragon no-verify"
+
+
+def release():
+    check_environment()
+    commit_locally()
+    remote_has_changes = True # start with this assumption
+    while remote_has_changes:
+        pull() 
+        make_branch_nice()          # switches from ugly to nice branch
+        remote_has_changes = push() # set remote_has_changes
 
 def check_push_guidelines():
     check_content()
@@ -186,12 +194,10 @@ def is_nice_branch():
     return re.search( nice_branch_regex, git.repo().current_branch() )
 
 
-# 0 dont do anything
-# 1 check and sign off
-# 2 ask
-config_locall_commit=0 
+# git hooks
+# =========
 
-# see man page githooks(5), pre-commit
+# see man page githooks(5)
 def pre_commit_hook():
     if is_nice_branch():
       print "git-dragon: a nice branch, checking commit. nice_branch_regex = '" + nice_branch_regex + "'"
@@ -199,6 +205,7 @@ def pre_commit_hook():
       print "git-dragon: not a nice branch, not doing anything. nice_branch_regex = '" + nice_branch_regex + "'"
     return 0
 
+# see man page githooks(5)
 def prepare_commit_msg_hook(args):
     # assume that we are in a commit run with --no-verify. commit_msg_hook will replace it
     # with the correct one in the no --no-verify case
@@ -210,7 +217,7 @@ def prepare_commit_msg_hook(args):
         f.close()
     return 0
 
-# see man page githooks(5), commit-msg
+# see man page githooks(5)
 # pre-commit hook approved commit, so the commit can be signed-off as being ok
 # --signoff option to git is not used so it is easier to work with arbitry
 # front-ends not provding/offering the --signoff option
@@ -227,7 +234,7 @@ def commit_msg_hook(filename):
         f.close() 
     return 0
 
-# see man page githooks(5), pre-receive
+# see man page githooks(5)
 def update_hook(ref_name,old_obj,new_obj):
     msg = git.commit(new_obj).message()
     regex = r'^' + re.escape(sign_off_str) + r'|^' + re.escape(no_verify_sign_off_str)
@@ -238,11 +245,3 @@ def update_hook(ref_name,old_obj,new_obj):
         print "git-dragon(remote): refusing non-signed-off commit " + new_obj
         return 1
 
-def release():
-    check_environment()
-    commit_locally()
-    remote_has_changes = True # start with this assumption
-    while remote_has_changes:
-        pull() 
-        make_branch_nice()          # switches from ugly to nice branch
-        remote_has_changes = push() # set remote_has_changes

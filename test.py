@@ -20,3 +20,19 @@ class TestGitConnector(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()    
+
+# tests by hand
+# 
+# on nice branch
+# echo foo >> main.cpp && git commit -a -m message --no-verify
+# git log
+# 
+# on nice branch
+# echo foo >> main.cpp && git commit -a -m message 
+# git log
+# 
+# on non-nice branch
+# echo foo >> main.cpp && git commit -a -m message 
+# git log
+# 
+# git push

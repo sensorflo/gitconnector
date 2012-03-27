@@ -1,11 +1,12 @@
 #!/usr/bin/python
 # 
+# 
 import sys
 import gitconnector
 
-class Usage(Exception):
-    def __init__(self, msg):
-        self.msg = msg
+# class Usage(Exception):
+#     def __init__(self, msg):
+#         self.msg = msg
 
 def main(argv=None):
     if argv is None:
@@ -39,6 +40,7 @@ def main(argv=None):
         else:
             raise Exception("Unknown subcommand: " + subcmd)
 
+    # except Usage, err:
     except Usage, err:
         print >>sys.stderr, err.msg
         print >>sys.stderr, "for help use --help"
