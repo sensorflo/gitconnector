@@ -1,0 +1,4 @@
+*.pyc
+repos/
+test/
+
