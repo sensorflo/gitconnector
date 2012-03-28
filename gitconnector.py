@@ -46,6 +46,8 @@ def release():
     repo.checkout(nice_branch)
     repo.pull()
     repo.push()
+    repo.checkout(ugly_branch)
+    repo.reset(nice_branch,"hard")
 
     # check_environment()
     # commit_locally()

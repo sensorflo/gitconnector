@@ -56,6 +56,10 @@ class repo:
         if subprocess.call([git_binary,"push"]):
             raise Exception("git push failed")
 
+    def push(self,treeish,mode):
+        if subprocess.call([git_binary,"reset","--" + mode,treeish]):
+            raise Exception("git reset failed")
+
     def pull(self):
         # todo: clone if not already exists. however, wasnt that done upon registering?
         # flag 'rewrite-local-commits' decides wheter --rebase is allowed
