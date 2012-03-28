@@ -39,6 +39,7 @@ no_verify_sign_off_str = "Signed-off-by: git-dragon no-verify"
 
 nice_branch = "flo-nice"
 ugly_branch = "flo"
+remote_branch = "origin/flo"
 
 def release():
     # pull before make_branch_nice, because after make_branch_nice we want have
@@ -62,8 +63,18 @@ def release():
 
 def pull():
     repo = git.repo()
+
+    # update ugly_branch
     repo.checkout(ugly_branch)
     repo.pull()
+
+    # update nice_branch todo: what if the above pull fails? Then the
+    # nice_branch is not rebased which leads to troubles later
+    repo.checkout(nice_branch)
+    repo.rebase(remote_branch)
+
+    # we want to continue working on ugly_branch
+    repo.checkout(ugly_branch)
 
 def check_content():
     return
@@ -159,8 +170,13 @@ def make_branch_nice():
     if repo.has_diffs(ugly_branch,nice_branch):
         repo.checkout(nice_branch)
         repo.merge_squash(ugly_branch)
-        repo.checkout(ugly_branch)
-        repo.merge(nice_branch)
+
+        # that helps to see which commit of ugly_branch was already merged into
+        # nice-branch. But it also makes rebasing nice-branch to a new remote
+        # branch 'impossible'
+        # repo.checkout(ugly_branch)
+        # repo.merge(nice_branch)
+
         # at the end ugly_branch is checkedout, so one can continue working on
         # it right away
 

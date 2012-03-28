@@ -63,6 +63,10 @@ class repo:
         if subprocess.call([git_binary,"merge","--commit",treeish]):
             raise Exception("git merge failed") 
 
+    def rebase(self,treeish):
+        if subprocess.call([git_binary,"rebase",treeish]):
+            raise Exception("git merge failed") 
+
     def push(self):
         if subprocess.call([git_binary,"push"]):
             raise Exception("git push failed")
