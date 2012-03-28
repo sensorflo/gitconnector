@@ -35,7 +35,14 @@ default_origin_branch = "remotes/origin/master"
 nice_branch_regex = r'-nice$' # remember that both the nice and the ugly have a remote, so either of the two *has* two have a different name
 sign_off_str = "Signed-off-by: git-dragon"
 no_verify_sign_off_str = "Signed-off-by: git-dragon no-verify"
-
+help_msg = \
+  '\n' +\
+  '# title (until first empty line)\n' +\
+  '#   - TDxxxx for all solved TDs \n' +\
+  '#   - short and sweet and to the point; try to use less than 50 chars\n' +\
+  '# body (the rest)\n' +\
+  '#   - free format\n' +\
+  '\n' 
 
 nice_branch = "flo-nice"
 ugly_branch = "flo"
@@ -221,8 +228,14 @@ def prepare_commit_msg_hook(args):
     if is_nice_branch():
         filename = args[0]
         msg_src = args[1] if len(args)>=1 else None
-        f = open(filename, 'a')
-        f.write('\n' + no_verify_sign_off_str) 
+        f = open(filename, 'r+')
+        msg = f.read()
+
+        msg = help_msg + re.sub(r'(?m)^#.*$',"",msg) + '\n' + no_verify_sign_off_str
+
+        f.seek(0)
+        f.truncate()
+        f.write(msg) 
         f.close()
     return 0
 
