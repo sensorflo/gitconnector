@@ -30,9 +30,14 @@ import re
 import git
 
 git_binary = "/usr/bin/git"
+
 default_branch = "master"
 default_origin_branch = "remotes/origin/master"
 nice_branch_regex = r'-nice$' # remember that both the nice and the ugly have a remote, so either of the two *has* two have a different name
+nice_branch = "master-nice" # todo: rename nice -> (nothing)
+ugly_branch = "master" # todo: rename ugly -> free
+remote_branch = "origin/master"
+
 sign_off_str = "Signed-off-by: git-dragon"
 no_verify_sign_off_str = "Signed-off-by: git-dragon no-verify"
 help_msg = \
@@ -44,9 +49,6 @@ help_msg = \
   '#   - free format\n' +\
   '\n' 
 
-nice_branch = "master-nice"
-ugly_branch = "master"
-remote_branch = "origin/master"
 
 def release():
     # pull before make_branch_nice, because after make_branch_nice we want have
