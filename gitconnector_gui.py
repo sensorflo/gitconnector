@@ -13,19 +13,6 @@ def release_button():
     except Exception as e:
          tkMessageBox.showwarning("error",e)
 
-# aka the old 'checkout'
-def start_branch_button():
-    try:
-        # ask for branchname
-        # if already exixts (check also the -nice sibling)
-        # - either enter new name
-        # - give existing name a suffix ala '-old-231'
-        # they shall track origin/working
-        gitconnector.start_branch()
-        tkMessageBox.showinfo("done","done")
-    except Exception as e:
-         tkMessageBox.showwarning("error",e)
-
 # 
 def make_branch_nice_button():
     try:
@@ -33,8 +20,6 @@ def make_branch_nice_button():
         tkMessageBox.showinfo("done","done")
     except Exception as e:
          tkMessageBox.showwarning("error",e)
-
-
 
 # aka the old 'get'
 # can easily be done by other GUIs
@@ -55,10 +40,6 @@ class App:
         self.button.pack(side=LEFT)
         self.hi_there = Button(frame, text="pull (get)", command=pull_button)
         self.hi_there.pack(side=LEFT)
-        self.hi_there = Button(frame, text="start branch (checkout)", command=start_branch_button)
-        self.hi_there.pack(side=LEFT)
-
-        # if one wants to use other tools for the push/release process 
         self.hi_there = Button(frame, text="make branch nice", command=make_branch_nice_button)
         self.hi_there.pack(side=LEFT)
         # rebase/merge abort buttons?
