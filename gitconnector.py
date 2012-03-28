@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 # Core functionality to tailor git for the dragon project
 
 # responsibilities/goals, ordered after prio:
@@ -44,9 +44,9 @@ help_msg = \
   '#   - free format\n' +\
   '\n' 
 
-nice_branch = "flo-nice"
-ugly_branch = "flo"
-remote_branch = "origin/flo"
+nice_branch = "master-nice"
+ugly_branch = "master"
+remote_branch = "origin/master"
 
 def release():
     # pull before make_branch_nice, because after make_branch_nice we want have
@@ -56,7 +56,7 @@ def release():
     repo.pull()
     make_branch_nice()
     repo.checkout(nice_branch)
-    repo.push()
+    repo.push(nice_branch)
     repo.checkout(ugly_branch)
     repo.make_branch( unique_branch_name(ugly_branch) );
     repo.reset(nice_branch,"hard")
@@ -265,5 +265,7 @@ def update_hook(ref_name,old_obj,new_obj):
         return 0
     else:
         print "git-dragon(remote): refusing non-signed-off commit " + new_obj
+        print msg
+        print "---------"
         return 1
 

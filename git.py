@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python 2.7
 import subprocess
 import re
 
@@ -75,8 +75,8 @@ class repo:
         if subprocess.call([git_binary,"rebase",treeish]):
             raise Exception("git rebase failed") 
 
-    def push(self):
-        if subprocess.call([git_binary,"push"]):
+    def push(self,treeish):
+        if subprocess.call([git_binary,"push","origin",treeish + ":master"]):
             raise Exception("git push failed")
 
     def reset(self,treeish,mode):

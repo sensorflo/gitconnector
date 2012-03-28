@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 # gui for accessing functionality in git_dragon.py
 
 from Tkinter import *
