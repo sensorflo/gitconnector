@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# export PATH=~/bin/gitconnector:"$PATH"
+
+# mkdir -p ~/src
+# cd ~/src
+# git clone https://sensorflo@github.com/sensorflo/gitconnector.git
+
+ln -s ~/src/gitconnector ~/bin/gitconnector
+
+cd ~/src/gitconnector/test/
+mkdir initial
+cd initial
+git init
+echo hello world >> main.cpp
+git add main.cpp
+git commit -a -m $'initial\nSigned-off-by: git-dragon'
+
+cd ~/src/gitconnector/test/
+git clone --bare initial remote
+ln ~/bin/gitconnector/update remote/hooks/update
+
+cd ~/src/gitconnector/test/
+git clone remote local1
+ln ~/bin/gitconnector/pre-commit local1/.git/hooks/pre-commit
+ln ~/bin/gitconnector/prepare-commit-msg local1/.git/hooks/prepare-commit
+ln ~/bin/gitconnector/commit-msg local1/.git/hooks/commit-msg
+git clone remote local2
+ln ~/bin/gitconnector/pre-commit local2/.git/hooks/pre-commit
+ln ~/bin/gitconnector/prepare-commit-msg local2/.git/hooks/prepare-commit
+ln ~/bin/gitconnector/commit-msg local2/.git/hooks/commit-msg
+
+# that ^%$darnit^%$ still doesnt work
+cd ~/src/gitconnector/test/local1
+git branch --track master-nice origin/master
+cd ~/src/gitconnector/test/local2
+git branch --track master-nice origin/master
+
+# date >> main.cpp; git commit -a -m "$(date)"
