@@ -41,10 +41,12 @@ nice_branch = "flo-nice"
 ugly_branch = "flo"
 
 def release():
-    make_branch_nice()
+    # pull before make_branch_nice, because after make_branch_nice we want have
+    # low probability to have to merge again
     repo = git.repo()
-    repo.checkout(nice_branch)
     repo.pull()
+    make_branch_nice()
+    repo.checkout(nice_branch)
     repo.push()
     repo.checkout(ugly_branch)
     repo.make_branch( unique_branch_name(ugly_branch) );
@@ -60,7 +62,7 @@ def release():
 
 def pull():
     repo = git.repo()
-    repo.checkout(nice_branch)
+    repo.checkout(ugly_branch)
     repo.pull()
 
 def check_content():
@@ -156,6 +158,9 @@ def make_branch_nice():
     repo = git.repo()
     repo.checkout(nice_branch)
     repo.merge_squash(ugly_branch)
+    repo.checkout(ugly_branch)
+    repo.merge(nice_branch)
+    repo.checkout(nice_branch)
 
 def unique_branch_name(base_name):
     """Returns a uniq branch name which starts with the given base"""
