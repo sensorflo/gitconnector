@@ -44,6 +44,7 @@ remote_branch = "origin/flo"
 def release():
     # pull before make_branch_nice, because after make_branch_nice we want have
     # low probability to have to merge again
+    commit()
     repo = git.repo()
     repo.pull()
     make_branch_nice()
@@ -54,7 +55,7 @@ def release():
     repo.reset(nice_branch,"hard")
 
     # check_environment()
-    # commit_locally()
+    # commit()
     # remote_has_changes = True # start with this assumption
     # while remote_has_changes:
     #     pull() 
@@ -63,6 +64,8 @@ def release():
 
 def pull():
     repo = git.repo()
+
+    commit()
 
     # update ugly_branch
     repo.checkout(ugly_branch)
@@ -101,25 +104,18 @@ def check_environment():
     # remote must be setup
     # remote must also have develop branch
 
-def commit_locally():
+def commit():
     # if something is to commit, ask for message can be free if there are
     # already other commits, must be guideline conform if its the first
 
+    # todo: tell user the user something like git status and ask what he wants to do
     # todo: if untracked files, add them
     # todo: if no changes whatsoever abort
     # todo: inform user that now with DVCS, he could check in locally. But dont do it
     #       if he changed only a few files, or if preferences turn off that msg.
-    working_changes = subprocess.call([git_binary,"diff","--exit-code"])
-    index_changes = subprocess.call([git_binary,"diff","--cached","--exit-code"])
-    if working_changes or index_changes:
-        if working_changes:
-            print "working tree canges, will locally comit"
-        if index_changes:
-            print "index canges, will locally comit"
-        if subprocess.call([git_binary,"commit","-a"]):
-            raise Exception("git commit failed")
-    else:
-        print "working tree and index clean, no local commit needed"
+    repo = git.repo()
+    if repo.has_local_changes():
+        repo.commit()
 
 def make_branch_nice():
     # goal must be that in central repo only nice commits apear in non
@@ -166,6 +162,7 @@ def make_branch_nice():
     # origin_branch = "remotes/origin/master"
     #base_commit = subprocess.check_output([git_binary,"merge-base",origin_branch,ugly_branch])
 
+    commit()
     repo = git.repo()
     if repo.has_diffs(ugly_branch,nice_branch):
         repo.checkout(nice_branch)

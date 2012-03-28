@@ -47,6 +47,10 @@ class repo:
     def has_diffs(self, treeish1, treeish2 ):
         return subprocess.call([git_binary,"diff", "--exit-code", treeish1, treeish2])
 
+    def has_local_changes(self):
+        return subprocess.call([git_binary,"diff", "--exit-code"]) or \
+            subprocess.call([git_binary,"diff", "--exit-code", "--cached"])
+
     def checkout(self,treeish):
         if not self.current_branch()==treeish:
             if subprocess.call([git_binary,"checkout",treeish]):
@@ -59,13 +63,17 @@ class repo:
             raise Exception("git merge --squash failed") 
         print "hello"
 
+    def commit(self):
+        if subprocess.call([git_binary,"commit","-a"]):
+            raise Exception("git commit failed") 
+
     def merge(self,treeish):
         if subprocess.call([git_binary,"merge","--commit",treeish]):
             raise Exception("git merge failed") 
 
     def rebase(self,treeish):
         if subprocess.call([git_binary,"rebase",treeish]):
-            raise Exception("git merge failed") 
+            raise Exception("git rebase failed") 
 
     def push(self):
         if subprocess.call([git_binary,"push"]):
