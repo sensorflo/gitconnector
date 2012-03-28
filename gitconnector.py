@@ -47,6 +47,7 @@ def release():
     repo.pull()
     repo.push()
     repo.checkout(ugly_branch)
+    repo.make_branch( unique_branch_name(ugly_branch) );
     repo.reset(nice_branch,"hard")
 
     # check_environment()
@@ -155,18 +156,16 @@ def make_branch_nice():
     repo = git.repo()
     repo.checkout(nice_branch)
     repo.merge_squash(ugly_branch)
-    
-    
-def get_backup_branchname():
-    branches = subprocess.check_output([git_binary,"branch"]).splitlines()
-    # branches = map( branches, ) remove leading 2 chars
+
+def unique_branch_name(base_name):
+    """Returns a uniq branch name which starts with the given base"""
+    branches = git.repo().branches()
     collision = True
     count = 1
     while collision:
-        new_branch = "geil" + str(count)
-        collision = next((x for x in branches if x == ("  " + new_branch)), False)
+        new_branch = base_name + "-bak-" +str(count)
+        collision = next((x for x in branches if x == new_branch), False)
         count += 1
-    print "found new branch name " + new_branch    
     return new_branch
 
 def fetch_rebase():

@@ -40,6 +40,10 @@ class repo:
         """Returns current branch's name"""
         return self.branches()[0]
 
+    def make_branch(self,name):
+        if subprocess.call([git_binary,"branch", name]):
+            raise Exception("git branch failed")
+
     def checkout(self,treeish):
         if not self.current_branch()==treeish:
             if subprocess.call([git_binary,"checkout",treeish]):
@@ -56,7 +60,7 @@ class repo:
         if subprocess.call([git_binary,"push"]):
             raise Exception("git push failed")
 
-    def push(self,treeish,mode):
+    def reset(self,treeish,mode):
         if subprocess.call([git_binary,"reset","--" + mode,treeish]):
             raise Exception("git reset failed")
 
