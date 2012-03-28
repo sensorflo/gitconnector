@@ -156,11 +156,13 @@ def make_branch_nice():
     #base_commit = subprocess.check_output([git_binary,"merge-base",origin_branch,ugly_branch])
 
     repo = git.repo()
-    repo.checkout(nice_branch)
-    repo.merge_squash(ugly_branch)
-    repo.checkout(ugly_branch)
-    repo.merge(nice_branch)
-    repo.checkout(nice_branch)
+    if repo.has_diffs(ugly_branch,nice_branch):
+        repo.checkout(nice_branch)
+        repo.merge_squash(ugly_branch)
+        repo.checkout(ugly_branch)
+        repo.merge(nice_branch)
+        # at the end ugly_branch is checkedout, so one can continue working on
+        # it right away
 
 def unique_branch_name(base_name):
     """Returns a uniq branch name which starts with the given base"""

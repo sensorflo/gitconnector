@@ -42,9 +42,10 @@ class App:
         self.hi_there.pack(side=LEFT)
         self.hi_there = Button(frame, text="make branch nice", command=make_branch_nice_button)
         self.hi_there.pack(side=LEFT)
-        # rebase/merge abort buttons?
+
 
 root = Tk()
+root.wm_title("git connector")
 app = App(root)
 root.mainloop()
 

@@ -44,6 +44,9 @@ class repo:
         if subprocess.call([git_binary,"branch", name]):
             raise Exception("git branch failed")
 
+    def has_diffs(self, treeish1, treeish2 ):
+        return subprocess.call([git_binary,"diff", "--exit-code", treeish1, treeish2])
+
     def checkout(self,treeish):
         if not self.current_branch()==treeish:
             if subprocess.call([git_binary,"checkout",treeish]):
