@@ -8,7 +8,7 @@ import gitconnector
 # as the old 'release'
 def release_button():
     try:
-        release()
+        gitconnector.release()
         tkMessageBox.showinfo("done","done")
     except Exception as e:
          tkMessageBox.showwarning("error",e)

@@ -32,25 +32,33 @@ import git
 git_binary = "/usr/bin/git"
 default_branch = "master"
 default_origin_branch = "remotes/origin/master"
-nice_branch_regex = r'-nice$' 
+nice_branch_regex = r'-nice$' # remember that both the nice and the ugly have a remote, so either of the two *has* two have a different name
 sign_off_str = "Signed-off-by: git-dragon"
 no_verify_sign_off_str = "Signed-off-by: git-dragon no-verify"
 
 
-def release():
-    check_environment()
-    commit_locally()
-    remote_has_changes = True # start with this assumption
-    while remote_has_changes:
-        pull() 
-        make_branch_nice()          # switches from ugly to nice branch
-        remote_has_changes = push() # set remote_has_changes
+nice_branch = "flo-nice"
+ugly_branch = "flo"
 
-def check_push_guidelines():
-    check_content()
-    check_buildable()
-    check_test_suite_runs()
-    check_message("foo")
+def release():
+    make_branch_nice()
+    repo = git.repo()
+    repo.checkout(nice_branch)
+    repo.pull()
+    repo.push()
+
+    # check_environment()
+    # commit_locally()
+    # remote_has_changes = True # start with this assumption
+    # while remote_has_changes:
+    #     pull() 
+    #     make_branch_nice()          # switches from ugly to nice branch
+    #     remote_has_changes = push() # set remote_has_changes
+
+def pull():
+    repo = git.repo()
+    repo.checkout(nice_branch)
+    repo.pull()
 
 def check_content():
     return
@@ -117,7 +125,7 @@ def make_branch_nice():
 
     # a feature-nice branch which 'mirrors' the featur branch: - dont merge into
     # origin/working (so the central has linear history) its not possible to
-    # have a 'nice-' branch, because only single commits which are not merge
+    # have a 'nice-' branch, becaouse only single commits which are not merge
     # commits can be pushed to the central repo. You only get that with
     # rebasing. And you don't want to insert the commits at the beginning of the
     # nice branch multiple times into the central repo.
@@ -130,30 +138,22 @@ def make_branch_nice():
     # (git push)
 
     # abort if working tree not clean
-    working_changes = subprocess.call([git_binary,"diff","--exit-code"])
-    index_changes = subprocess.call([git_binary,"diff","--cached","--exit-code"])
-    if working_changes:
-        raise Exception("working tree not clean")
-    if index_changes:
-        raise Exception("index (aka staging area) not clean")
+    # working_changes = subprocess.call([git_binary,"diff","--exit-code"])
+    # index_changes = subprocess.call([git_binary,"diff","--cached","--exit-code"])
+    # if working_changes:
+    #     raise Exception("working tree not clean")
+    # if index_changes:
+    #     raise Exception("index (aka staging area) not clean")
 
     # abort if branch is already nice 
     
-    nice_branch = "master-nice"
-    ugly_branch = "master-ugly"
-    origin_branch = "remotes/origin/master"
+    # origin_branch = "remotes/origin/master"
+    #base_commit = subprocess.check_output([git_binary,"merge-base",origin_branch,ugly_branch])
 
-
-    base_commit = subprocess.check_output([git_binary,"merge-base",origin_branch,ugly_branch])
-
-    if subprocess.call([git_binary,"checkout",base_commit]):
-        raise Exception("git checkout failed")
-    if subprocess.call([git_binary,"merge","--squash","--ff-only",ugly_branch]):
-        raise Exception("git merge failed") # what then?
-
-    # for now let git ask the message
-    if subprocess.call([git_binary,"commit","-a","-s"]):
-        raise Exception("git commit failed")
+    repo = git.repo()
+    repo.checkout(nice_branch)
+    repo.merge_squash(ugly_branch)
+    
     
 def get_backup_branchname():
     branches = subprocess.check_output([git_binary,"branch"]).splitlines()
@@ -167,12 +167,6 @@ def get_backup_branchname():
     print "found new branch name " + new_branch    
     return new_branch
 
-def pull():
-    # todo: clone if not already exists. however, wasnt that done upon registering?
-    # flag 'rewrite-local-commits' decides wheter --rebase is allowed
-    if subprocess.call([git_binary,"pull","--rebase"]):
-        raise Exception("git pull failed")
-
 def fetch_rebase():
     # todo: clone if not already exists. however, wasnt that done upon registering?
     # ???? use --rebase?o
@@ -180,12 +174,6 @@ def fetch_rebase():
         raise Exception("git fetch failed")
     if subprocess.call([git_binary,"rebase",default_origin_branch]):
         raise Exception("git rebase failed")
-
-def push():
-    # first time I had to git push origin '*:*'
-    if subprocess.call([git_binary,"push"]):
-        raise Exception("git push failed")
-    return False
 
 def ask_message():
     return "hello"

@@ -40,4 +40,27 @@ class repo:
         """Returns current branch's name"""
         return self.branches()[0]
 
+    def checkout(self,treeish):
+        if not self.current_branch()==treeish:
+            if subprocess.call([git_binary,"checkout",treeish]):
+                raise Exception("git checkout failed")
+        
+    def merge_squash(self,treeish):
+        if subprocess.call([git_binary,"merge","--squash","--ff-only",treeish]):
+            raise Exception("git merge --squash failed") 
+        if subprocess.call([git_binary,"commit","-a"]): 
+            raise Exception("git merge --squash failed") 
+        print "hello"
+
+    def push(self):
+        if subprocess.call([git_binary,"push"]):
+            raise Exception("git push failed")
+
+    def pull(self):
+        # todo: clone if not already exists. however, wasnt that done upon registering?
+        # flag 'rewrite-local-commits' decides wheter --rebase is allowed
+        if subprocess.call([git_binary,"pull","--rebase"]):
+            raise Exception("git pull failed")
+
+
 #class commit:    
