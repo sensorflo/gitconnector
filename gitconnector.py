@@ -38,6 +38,7 @@ nice_branch = "master-nice" # todo: rename nice -> (nothing)
 ugly_branch = "master" # todo: rename ugly -> free
 remote_branch = "origin/master"
 
+# todo: rename sign-off to verified (according to git's option --no-verify) approved or certified or 
 sign_off_str = "Signed-off-by: git-dragon"
 no_verify_sign_off_str = "Signed-off-by: git-dragon no-verify"
 help_msg = \
@@ -234,6 +235,9 @@ def prepare_commit_msg_hook(args):
         msg = f.read()
 
         msg = help_msg + re.sub(r'(?m)^#.*$',"",msg) + '\n' + no_verify_sign_off_str
+        # todo: when user commits with --no-verify, automatically
+        # insert the reason here (maybe its better to not support that
+        # convenience. We want to make it cumbersome to commit without verify).
 
         f.seek(0)
         f.truncate()
@@ -250,7 +254,11 @@ def commit_msg_hook(filename):
         print "git-dragon: checks passed. signing off commit"
         f = open(filename, 'r+')
         msg = f.read()
+
+        # todo: first test that when user wants to commit with
+        # gitconnector-no-verify he gives a reason
         msg = re.sub( re.escape(no_verify_sign_off_str) , "", msg )
+
         msg += '\n' + sign_off_str
         f.seek(0)
         f.truncate()
