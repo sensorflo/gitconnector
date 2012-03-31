@@ -57,11 +57,8 @@ class repo:
                 raise Exception("git checkout failed")
         
     def merge_squash(self,treeish):
-        if subprocess.call([git_binary,"merge","--squash","--ff-only",treeish]):
+        if subprocess.call([git_binary,"merge","--squash",treeish]):
             raise Exception("git merge --squash failed") 
-        if subprocess.call([git_binary,"commit","-a"]): 
-            raise Exception("git merge --squash failed") 
-        print "hello"
 
     def commit(self):
         if subprocess.call([git_binary,"commit","-a"]):
@@ -88,6 +85,20 @@ class repo:
         # flag 'rewrite-local-commits' decides wheter --rebase is allowed
        if subprocess.call([git_binary,"pull"]):
             raise Exception("git pull failed")
+
+    def get_status(self):
+        return subprocess.Popen([git_binary,"status"],stdout=subprocess.PIPE).communicate()[0]
+
+    def get_log_graph(self,remote,nice,free):
+        base_nice = subprocess.Popen([git_binary,"merge-base",remote,nice],stdout=subprocess.PIPE).communicate()[0].rstrip()
+        base_free = subprocess.Popen([git_binary,"merge-base",remote,free],stdout=subprocess.PIPE).communicate()[0].rstrip()
+        # todo: make more error prone: what if free is older, or if there are not more commits
+        return subprocess.Popen([git_binary,"log", "--graph", "--oneline","--decorate=short",\
+                                 base_nice + "^^.." + nice,\
+                                 base_free + "^^.." + free,\
+                                 base_nice + "^^.." + remote,\
+                                 base_free + "^^.." + remote \
+                                     ],stdout=subprocess.PIPE).communicate()[0]
 
 
 #class commit:    

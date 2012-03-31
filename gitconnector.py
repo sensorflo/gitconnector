@@ -28,7 +28,7 @@
 import subprocess
 import re
 import git
-
+import tkMessageBox
 git_binary = "/usr/bin/git"
 
 default_branch = "master"
@@ -89,6 +89,26 @@ def pull():
     # we want to continue working on ugly_branch
     repo.checkout(ugly_branch)
 
+def get_status_txt():
+    # todo: emphasise when in merge/rebase conflict
+    repo = git.repo()
+    txt = "--- status of index and working tree ---\n"
+    txt += repo.get_status()
+    txt += "\n"
+    txt += "\n"
+    txt += "--- currently interesting branches ---\n"
+    txt += "current branch: " + repo.current_branch() + "\n"
+    txt += "remote branch : " + remote_branch + "\n" # x commits ahaed
+    txt += "nice branch   : " + nice_branch + "\n"   # x commits pushable into remot
+    txt += "free branch   : " + ugly_branch + "\n"   # x commits nice-able
+    txt += "\n"
+    txt += repo.get_log_graph(remote_branch,nice_branch,ugly_branch)
+    # txt += "\nnice-able commits:\n"
+    # txt += repo.
+    # txt += "\npushable nice commits:\n"
+    # txt += repo.
+    return txt
+
 def check_content():
     return
 
@@ -120,11 +140,20 @@ def commit():
 
     # todo: tell user the user something like git status and ask what he wants to do
     # todo: if untracked files, add them
-    # todo: if no changes whatsoever abort
     # todo: inform user that now with DVCS, he could check in locally. But dont do it
     #       if he changed only a few files, or if preferences turn off that msg.
     repo = git.repo()
     if repo.has_local_changes():
+        if is_nice_branch():
+            msg = "You are on currently on a nice branch (" + nice_branch + "). " +\
+                  "Normally you want commit to the free branch (" + ugly_branch + "). " +\
+                  "Continue?"
+            if tkMessageBox.askyesno("whatever", msg)==0:
+                raise Exception("Aborted by user")
+        else:
+            msg = "You have local changes. I will commit them now."
+            if tkMessageBox.askokcancel("whatever", msg)==0:
+                raise Exception("Aborted by user")
         repo.commit()
 
 def make_branch_nice():
@@ -177,6 +206,12 @@ def make_branch_nice():
     if repo.has_diffs(ugly_branch,nice_branch):
         repo.checkout(nice_branch)
         repo.merge_squash(ugly_branch)
+
+        if tkMessageBox.showinfo("whatever", "Making-nice was successfull. Will now commit the new nice commit.")==0:
+            raise Exception("Aborted by user")
+        repo.commit()
+        # todo: if the user commits stuff on the nice branch directly and later makes nice
+        # he has merge conflicts everytime he runs make nice
 
         # that helps to see which commit of ugly_branch was already merged into
         # nice-branch. But it also makes rebasing nice-branch to a new remote
