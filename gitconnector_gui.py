@@ -67,7 +67,7 @@ class App:
     # as the old 'release'
     def commit_button(self):
         try:
-            gitconnector.commit()
+            gitconnector.commit(True)
             self.update_status_button()
             tkMessageBox.showinfo("done","done")
         except Exception as e:

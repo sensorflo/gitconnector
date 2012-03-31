@@ -60,9 +60,13 @@ class repo:
         if subprocess.call([git_binary,"merge","--squash",treeish]):
             raise Exception("git merge --squash failed") 
 
-    def commit(self):
-        if subprocess.call([git_binary,"commit","-a"]):
-            raise Exception("git commit failed") 
+    def commit(self,allow_empty):
+        if allow_empty:
+            if subprocess.call([git_binary,"commit","-a","--allow-empty"]):
+                raise Exception("git commit failed") 
+        else:
+            if subprocess.call([git_binary,"commit","-a"]):
+                raise Exception("git commit failed") 
 
     def merge(self,treeish):
         if subprocess.call([git_binary,"merge","--commit",treeish]):
