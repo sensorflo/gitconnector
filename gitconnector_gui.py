@@ -30,29 +30,27 @@ class App:
     def __init__(self, master):
         frame = Frame(master)
         frame.pack()
+
+        self.text=Text(master,background='white',height=25) # height=25,width=100,
+        self.text.config(state=DISABLED)
+        self.text.pack(expand=1,fill=BOTH,side=TOP)
+        # self.text.scrolly=Scrollbar(self.text)
+        # self.text.configure(yscrollcommand=self.text.scrolly.set) 
+        # self.text.scrolly.pack(side=RIGHT,fill=Y)
+        # self.text.scrollx=Scrollbar(self.text)
+        # self.text.configure(xscrollcommand=self.text.scrollx.set) 
+        # self.text.scrollx.pack(side=BOTTOM,fill=X)
+
         self.release = Button(frame, text="relase", command=self.release_button)
         self.release.pack(side=LEFT)
-        self.release = Button(frame, text="commit", command=self.commit_button)
-        self.release.pack(side=LEFT)
+        self.commit = Button(frame, text="commit", command=self.commit_button)
+        self.commit.pack(side=LEFT)
         self.pull = Button(frame, text="pull (get)", command=self.pull_button)
         self.pull.pack(side=LEFT)
         self.make_nice = Button(frame, text="make branch nice", command=self.make_branch_nice_button)
         self.make_nice.pack(side=LEFT)
-        self.make_nice = Button(frame, text="update status", command=self.update_status_button)
-        self.make_nice.pack(side=LEFT)
-
-        textfr=Frame(frame)
-        self.text=Text(textfr,background='white') # height=25,width=100,
-       	# put a scroll bar in the frame
-        scroll=Scrollbar(textfr)
-        self.text.configure(yscrollcommand=scroll.set)
-        # self.text.config(state=DISABLED)
-		
-        #pack everything
-        self.text.pack(side=LEFT)
-        scroll.pack(side=RIGHT,fill=Y)
-        textfr.pack(side=BOTTOM)
-
+        self.update_status = Button(frame, text="update status", command=self.update_status_button)
+        self.update_status.pack(side=LEFT)
         self.update_status_button()
 
     # as the old 'release'
@@ -94,8 +92,11 @@ class App:
 
     def update_status_button(self):
         try:
+            txt = gitconnector.get_status_txt()
+            self.text.config(state=NORMAL)
             self.text.delete("0.0",END)
-            self.text.insert(END, gitconnector.get_status_txt())
+            self.text.insert(END, txt )
+            self.text.config(state=DISABLED)
         except Exception as e:
             tkMessageBox.showwarning("error",e)
 
