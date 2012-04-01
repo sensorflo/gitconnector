@@ -127,19 +127,45 @@ class repo:
         # return len(tmp)==0
         return True
 
-    def get_log_graph(self,remote,nice,free):
+    def cut_parent_count(self,treeish,count):
+        "Returns min of 1) count 2) the number of first parents of treeish, o"
+
+    def get_rev_range(self,start_treeish,end_treeish,count):
+        """Return a revision range starting (incl.) at the count'th parent of
+        start_treeish and ends (incl) end_treeish."""
+        # + 1 because one line is the start_treeish itself
+        # + another 1 because we want to see if there would be more 
+        cmd = [git_binary,"rev-list","--first-parent","-n",str(count+2),start_treeish]
+        refs = subprocess.check_output( cmd ).splitlines()
+        # -1 becaue refs contain the treeish itself
+        parent_cnt = len(refs)-1
+        # smaller-EQUAL because the ".." in the else clause does never work for
+        # cases where I want to start at the first commit
+        if parent_cnt<=count:
+            return end_treeish
+        else:
+            return start_treeish + "~" + str(count+1) + ".." + end_treeish
+
+    def get_log_graph(self,remote,nice,free,context):
+        """Returns an ascii log graph containing remote, nice and free and the
+        context'th parent of the older merge base."""
         refs = []
         if remote and nice:
             base_nice = self.merge_base(remote,nice)
-            refs.append(base_nice + "~2.." + remote)
-            refs.append(base_nice + "~2.." + nice)
+            refs.append( self.get_rev_range( base_nice, remote, context ) )
+            refs.append( self.get_rev_range( base_nice, nice, context ) )
         if remote and free:
             base_free = self.merge_base(remote,free)
-            refs.append(base_free + "~2.." + free)
-            refs.append(base_free + "~2.." + free)
+            refs.append( self.get_rev_range( base_free, remote, context ) )
+            refs.append( self.get_rev_range( base_free, free, context ) )
+        if remote and not refs:
+            base_head = self.merge_base(remote,"HEAD")
+            refs.append( self.get_rev_range( base_head, remote, context ) )
+            refs.append( self.get_rev_range( base_head, "HEAD", context ) )
+        if not refs:
+            refs.append( self.get_rev_range( "HEAD", "HEAD", context ) )
         # todo: make more error prone: what if free is older, or if there are
         # not more commits
-        print refs    
         if not refs:
             return ""
         else:

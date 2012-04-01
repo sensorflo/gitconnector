@@ -36,6 +36,9 @@ git_binary = "/usr/bin/git"
 default_nice_branch = "refs/heads/master-nice" 
 default_free_branch = "refs/heads/master"
 default_remote_branch = "refs/remotes/origin/master"
+# the same string 'git branch' uses. Is not required, but is more
+# consistent
+no_branch = "(no branch)"
 
 # If a branch matches it is a nice branch, else it is a free branch. To convert
 # a nice branch name into an free branch name, the matching group 1 is removed
@@ -75,7 +78,7 @@ def free_branch(allow_create=False, str_if_none=False):
             else:
                 result = proposed_branch
     if not result and str_if_none:
-        result = "(none)"
+        result = no_branch
     return result
 
 def nice_branch(allow_create=False, str_if_none=False):
@@ -95,7 +98,7 @@ def nice_branch(allow_create=False, str_if_none=False):
             else:
                 result = proposed_branch
     if not result and str_if_none:
-        result = "(none)"
+        result = no_branch
     return result
 
 
@@ -188,14 +191,17 @@ def pull(explicit=False):
 
 def get_status_txt():
     # todo: emphasise when in merge/rebase conflict
+    context = 4
+    plural = "s" if context>1 else ""
     repo = git.repo()
     txt = "--- current branch's friends ---\n"
     txt += "current branch: " + abbrev_ref(repo.current_branch(str_if_none=True)) + "\n"
-    txt += "remote branch : " + abbrev_ref(remote_branch(str_if_none=True)) + "\n" # x commits ahaed
-    txt += "nice branch   : " + abbrev_ref(nice_branch(str_if_none=True)) + "\n"   # x commits pushable into remot
     txt += "free branch   : " + abbrev_ref(free_branch(str_if_none=True)) + "\n"   # x commits nice-able
-    txt += "log:\n"
-    txt += repo.get_log_graph(remote_branch(),nice_branch(),free_branch())
+    txt += "nice branch   : " + abbrev_ref(nice_branch(str_if_none=True)) + "\n"   # x commits pushable into remot
+    txt += "remote branch : " + abbrev_ref(remote_branch(str_if_none=True)) + "\n" # x commits ahaed
+    txt += "\n"
+    txt += "log extract:\n"
+    txt += repo.get_log_graph(remote_branch(),nice_branch(),free_branch(),context)
     # txt += "\nnice-able commits:\n"
     # txt += repo.
     # txt += "\npushable nice commits:\n"
