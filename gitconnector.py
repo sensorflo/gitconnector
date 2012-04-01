@@ -54,12 +54,22 @@ help_msg = \
 def abbrev_ref(ref):
     return re.sub( r'^refs/(remotes/|heads/)?', "", ref)
 
+def check_detached_head():
+    if git.repo().current_branch(str_if_none=False)==None:
+        msg = "You have no branch checked out, i.e. you're in a detached head state. " +\
+            "You need need to check out a branch first. Aborting."
+        tkMessageBox.showinfo("", msg )
+        raise Exception("Aborted")
+
 def release():
     repo = git.repo()
     has_local_changes = repo.has_local_changes()
     # ahead = (repo.commits_ahead(repo.current_branch(),remote_branch)!=0)
     is_alreay_nice = False
 
+    
+    check_detached_head()
+    
     # nothing to do
     # if not has_local_changes and not ahead:
     #     msg = "You neither have local changes nor have you made commits " +\
@@ -101,6 +111,7 @@ def release():
 def pull():
     repo = git.repo()
 
+    check_detached_head()
     commit()
 
     # update ugly_branch
@@ -156,6 +167,9 @@ def commit(explicit=False, ask_when_nice=True):
     # todo: inform user that now with DVCS, he could check in locally. But dont do it
     #       if he changed only a few files, or if preferences turn off that msg.
     repo = git.repo()
+    if explicit:
+        check_detached_head()
+        
     has_changes = repo.has_local_changes()
     allow_empty = False
     if not has_changes and explicit:
@@ -229,6 +243,7 @@ def make_branch_nice():
     #base_commit = subprocess.check_output([git_binary,"merge-base",origin_branch,ugly_branch])
 
     repo = git.repo()
+    check_detached_head()
     if is_nice_branch():
         if repo.has_local_changes():
             msg = "You are already on the nice branch (" + abbrev_ref(nice_branch) + ") and you " +\
