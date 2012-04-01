@@ -35,11 +35,11 @@ git_binary = "/usr/bin/git"
 # come after refs/head
 default_branch = "refs/heads/master"
 default_origin_branch = "refs/remotes/origin/master"
-nice_branch = "refs/heads/master-nice" # todo: rename nice -> (nothing)
-ugly_branch = "refs/heads/master" # todo: rename ugly -> free
+nice_branch = "refs/heads/master-nice" 
+free_branch = "refs/heads/master"
 remote_branch = "refs/remotes/origin/master"
 
-nice_branch_regex = r'-nice$' # remember that both the nice and the ugly have a remote, so either of the two *has* two have a different name
+nice_branch_regex = r'-nice$' 
 
 
 # todo: rename sign-off to verified (according to git's option --no-verify) approved or certified or 
@@ -102,14 +102,14 @@ def release():
         make_branch_nice()
     repo.checkout(nice_branch) # todo: is that really needed?
     repo.push(nice_branch)
-    if not repo.is_reachable(ugly_branch):
-        repo.make_branch( unique_branch_name(ugly_branch), ugly_branch);
+    if not repo.is_reachable(free_branch):
+        repo.make_branch( unique_branch_name(free_branch), free_branch);
 
     # remote
         _has_changes = True # start with this assumption
     # while remote_has_changes:
     #     pull() 
-    #     make_branch_nice()          # switches from ugly to nice branch
+    #     make_branch_nice()          # switches from free to nice branch
     #     remote_has_changes = push() # set remote_has_changes
 
 def pull():
@@ -118,8 +118,8 @@ def pull():
     check_detached_head()
     commit()
 
-    # update ugly_branch
-    repo.checkout(ugly_branch)
+    # update free_branch
+    repo.checkout(free_branch)
     repo.pull()
 
     # update nice_branch todo: what if the above pull fails? Then the
@@ -127,8 +127,8 @@ def pull():
     repo.checkout(nice_branch)
     repo.rebase(remote_branch)
 
-    # we want to continue working on ugly_branch
-    repo.checkout(ugly_branch)
+    # we want to continue working on free_branch
+    repo.checkout(free_branch)
 
 def get_status_txt():
     # todo: emphasise when in merge/rebase conflict
@@ -141,9 +141,9 @@ def get_status_txt():
     txt += "current branch: " + abbrev_ref(repo.current_branch()) + "\n"
     txt += "remote branch : " + abbrev_ref(remote_branch) + "\n" # x commits ahaed
     txt += "nice branch   : " + abbrev_ref(nice_branch) + "\n"   # x commits pushable into remot
-    txt += "free branch   : " + abbrev_ref(ugly_branch) + "\n"   # x commits nice-able
+    txt += "free branch   : " + abbrev_ref(free_branch) + "\n"   # x commits nice-able
     txt += "\n"
-    txt += repo.get_log_graph(remote_branch,nice_branch,ugly_branch)
+    txt += repo.get_log_graph(remote_branch,nice_branch,free_branch)
     # txt += "\nnice-able commits:\n"
     # txt += repo.
     # txt += "\npushable nice commits:\n"
@@ -190,7 +190,7 @@ def commit(explicit=False, ask_when_nice=True):
             else:
                 pre_msg = "You have local changes which need to be commited first. But you"
             msg = pre_msg + " are on currently on a nice branch (" + abbrev_ref(nice_branch) + "). " +\
-                  "Normally you want commit to the free branch (" + abbrev_ref(ugly_branch) + ") " +\
+                  "Normally you want commit to the free branch (" + abbrev_ref(free_branch) + ") " +\
                   "and then use 'make branch nice'. " +\
                   "Continue committing to the nice branch?"
             if tkMessageBox.askyesno("", msg)==0:
@@ -244,7 +244,7 @@ def make_branch_nice():
     # abort if branch is already nice 
     
     # origin_branch = "remotes/origin/master"
-    #base_commit = subprocess.check_output([git_binary,"merge-base",origin_branch,ugly_branch])
+    #base_commit = subprocess.check_output([git_binary,"merge-base",origin_branch,free_branch])
 
     repo = git.repo()
     check_detached_head()
@@ -253,33 +253,33 @@ def make_branch_nice():
             msg = "You are already on the nice branch (" + abbrev_ref(nice_branch) + ") and you " +\
                 "you have local changes which a) you normally don't want to commit to " +\
                 "the nice branch and which b) prevents me from automatically switching " +\
-                "to the free branch (" + abbrev_ref(ugly_branch) + "). Aborting."
+                "to the free branch (" + abbrev_ref(free_branch) + "). Aborting."
             tkMessageBox.showinfo("", msg )
             raise Exception("Aborted")
         else:    
             msg = "You are already on the nice branch (" + abbrev_ref(nice_branch) + "). " +\
-                "I will switch to free branch (" + abbrev_ref(ugly_branch) + ") first."
+                "I will switch to free branch (" + abbrev_ref(free_branch) + ") first."
             if tkMessageBox.askokcancel("", msg )==0:
                 raise Exception("Aborted by user")
-            repo.checkout(ugly_branch)
+            repo.checkout(free_branch)
             
     commit()
-    if repo.has_diffs(ugly_branch,nice_branch):
+    if repo.has_diffs(free_branch,nice_branch):
         repo.checkout(nice_branch)
-        repo.merge_squash(ugly_branch)
+        repo.merge_squash(free_branch)
 
         tkMessageBox.showinfo("", "Making-nice was successfull. Will now commit the new nice commit.")
         repo.commit()
         # todo: if the user commits stuff on the nice branch directly and later makes nice
         # he has merge conflicts everytime he runs make nice
 
-        # that helps to see which commit of ugly_branch was already merged into
+        # that helps to see which commit of free_branch was already merged into
         # nice-branch. But it also makes rebasing nice-branch to a new remote
         # branch 'impossible'
-        # repo.checkout(ugly_branch)
+        # repo.checkout(free_branch)
         # repo.merge(nice_branch)
 
-        # at the end ugly_branch is checkedout, so one can continue working on
+        # at the end free_branch is checkedout, so one can continue working on
         # it right away
 
 def unique_branch_name(base_name):
