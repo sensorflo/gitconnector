@@ -31,12 +31,12 @@ import git
 import tkMessageBox
 git_binary = "/usr/bin/git"
 
-default_branch = "master"
-default_origin_branch = "remotes/origin/master"
+default_branch = "refs/heads/master"
+default_origin_branch = "refs/remotes/origin/master"
 nice_branch_regex = r'-nice$' # remember that both the nice and the ugly have a remote, so either of the two *has* two have a different name
-nice_branch = "master-nice" # todo: rename nice -> (nothing)
-ugly_branch = "master" # todo: rename ugly -> free
-remote_branch = "origin/master"
+nice_branch = "refs/heads/master-nice" # todo: rename nice -> (nothing)
+ugly_branch = "refs/heads/master" # todo: rename ugly -> free
+remote_branch = "refs/remotes/origin/master"
 
 # todo: rename sign-off to verified (according to git's option --no-verify) approved or certified or 
 sign_off_str = "Signed-off-by: git-dragon"
@@ -52,21 +52,44 @@ help_msg = \
 
 
 def release():
+    repo = git.repo()
+    has_local_changes = repo.has_local_changes()
+    # ahead = (repo.commits_ahead(repo.current_branch(),remote_branch)!=0)
+    is_alreay_nice = False
+
+    # nothing to do
+    # if not has_local_changes and not ahead:
+    #     msg = "You neither have local changes nor have you made commits " +\
+    #           "on your current branch (" + repo.current_branch() + ") relative " +\
+    #           "to the remote tracking branch (" + remote_branch + "). Nothing to do."
+    #     tkMessageBox.showinfo("", msg )
+    #     raise Exception("Aborted");
+
+    # directly commit to nice branch if possible / avoid commiting to free
+    # branch which will then have only one commit, which is stupid (but not an
+    # error)
+    # elif has_local_changes and not ahead:
+    #     repo.checkout(nice_branch)
+    #     commit(ask_when_nice=False)
+    #     is_alreay_nice = True
+
+    # 
+    # elif has_local_changes:
+    #     commit()
+    commit()
+    
     # pull before make_branch_nice, because after make_branch_nice we want have
     # low probability to have to merge again
-    commit()
-    repo = git.repo()
     repo.pull()
-    make_branch_nice()
-    repo.checkout(nice_branch)
+    if not is_alreay_nice:
+        make_branch_nice()
+    repo.checkout(nice_branch) # todo: is that really needed?
     repo.push(nice_branch)
-    repo.checkout(ugly_branch)
-    repo.make_branch( unique_branch_name(ugly_branch) );
-    repo.reset(nice_branch,"hard")
+    if not repo.is_reachable(ugly_branch):
+        repo.make_branch( unique_branch_name(ugly_branch), ugly_branch);
 
-    # check_environment()
-    # commit()
-    # remote_has_changes = True # start with this assumption
+    # remote
+        _has_changes = True # start with this assumption
     # while remote_has_changes:
     #     pull() 
     #     make_branch_nice()          # switches from ugly to nice branch
@@ -121,20 +144,7 @@ def check_buildable():
 def check_message(message):
     return
 
-def check_environment():
-    # - git binary available
-    # - no pending merges, rebases, ...
-    # - remote repo available
-    branches = subprocess.check_output([git_binary,"branch"]) # must be 'develop'
-    current_branch = re.search(r'^\*\s+(\w+)',branches,re.M).group(1)
-    if not (current_branch == default_branch):
-        raise Exception("your current branch is '" + current_branch + "' " + \
-                        "but it should be '" + default_branch + "'. Aborting")
-
-    # remote must be setup
-    # remote must also have develop branch
-
-def commit(explicit=False):
+def commit(explicit=False, ask_when_nice=True):
     # if something is to commit, ask for message can be free if there are
     # already other commits, must be guideline conform if its the first
 
@@ -148,12 +158,12 @@ def commit(explicit=False):
     if not has_changes and explicit:
         msg = "You don't have any local changes to commit. " +\
             "Do you want to force creating an empty commit?"
-        if tkMessageBox.askokcancel("whatever",msg)==0:
+        if tkMessageBox.askokcancel("",msg)==0:
             raise Exception("Aborted by User")
         allow_empty = True
         
     if has_changes or allow_empty:
-        if is_nice_branch():
+        if is_nice_branch() and ask_when_nice:
             if explicit:
                 pre_msg = "You"
             else:
@@ -162,11 +172,11 @@ def commit(explicit=False):
                   "Normally you want commit to the free branch (" + ugly_branch + ") " +\
                   "and then use 'make branch nice'. " +\
                   "Continue committing to the nice branch?"
-            if tkMessageBox.askyesno("whatever", msg)==0:
+            if tkMessageBox.askyesno("", msg)==0:
                 raise Exception("Aborted by user")
         elif not explicit:
             msg = "You have local changes which need to be commited first. I will commit them now."
-            if tkMessageBox.askokcancel("whatever", msg)==0:
+            if tkMessageBox.askokcancel("", msg)==0:
                 raise Exception("Aborted by user")
         repo.commit(allow_empty)
 
@@ -222,12 +232,12 @@ def make_branch_nice():
                 "you have local changes which a) you normally don't want to commit to " +\
                 "the nice branch and which b) prevents me from automatically switching " +\
                 "to the free branch (" + ugly_branch + "). Aborting."
-            tkMessageBox.showinfo("whatever", msg )
+            tkMessageBox.showinfo("", msg )
             raise Exception("Aborted")
         else:    
             msg = "You are already on the nice branch (" + nice_branch + "). " +\
                 "I will switch to free branch (" + ugly_branch + ") first."
-            if tkMessageBox.askokcancel("whatever", msg )==0:
+            if tkMessageBox.askokcancel("", msg )==0:
                 raise Exception("Aborted by user")
             repo.checkout(ugly_branch)
             
@@ -236,7 +246,7 @@ def make_branch_nice():
         repo.checkout(nice_branch)
         repo.merge_squash(ugly_branch)
 
-        tkMessageBox.showinfo("whatever", "Making-nice was successfull. Will now commit the new nice commit.")
+        tkMessageBox.showinfo("", "Making-nice was successfull. Will now commit the new nice commit.")
         repo.commit()
         # todo: if the user commits stuff on the nice branch directly and later makes nice
         # he has merge conflicts everytime he runs make nice

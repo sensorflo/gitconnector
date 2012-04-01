@@ -8,6 +8,7 @@
 
 ln -s ~/src/gitconnector ~/bin/gitconnector
 
+mkdir -p ~/src/gitconnector/test/
 cd ~/src/gitconnector/test/
 mkdir initial
 cd initial

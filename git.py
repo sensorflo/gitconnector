@@ -5,10 +5,6 @@ import re
 
 git_binary = "/usr/bin/git"
 
-class git_cmd:    
-    def foo(self,args):
-        return
-        
 class commit:
     sha1 = 0
 
@@ -22,26 +18,34 @@ class commit:
 
 class repo:    
     def branches(self):
-        """Returns branch names. The current branch is the first"""
+        """Returns local branch/ref names"""
+        sha_and_ref = subprocess.check_output([git_binary,"show-ref"]).splitlines()
+        ro = re.compile(r'^[^ \t]+[ \t]+(refs/heads/.+)$')
+        return [ro.match(x).group(1) for x in sha_and_ref if ro.match(x)]
+
+    def current_branch(self,str_if_none=True):
+        """Returns current branch's name. If you're on a detached HEAD, None is returned
+        if str_if_none is False, else the string '(no branch)' is returned."""
         raw_branches = subprocess.check_output([git_binary,"branch"]).splitlines()
-        branches = []
-        current_cnt = 0
-        for raw_branch in raw_branches:
-            if re.match(r'\*', raw_branch ):
-                branches.insert(0,raw_branch[2:])
-                current_cnt += 1
-            else:    
-                branches.append(raw_branch[2:])
-        if len(branches)==0 or current_cnt!=1:
-            raise Exception("No branches found or multiple current branches")
-        return branches
+        ro = re.compile(r'^\* (.*)$')
+        for x in raw_branches:
+            mo = ro.match( x )
+            if mo:
+                branch = mo.group(1)
+                if mo and re.match( r'^\(', branch ):
+                    if str_if_none:
+                        return branch
+                    else:
+                        return None
+                elif mo:
+                    return branch
+        return None
 
-    def current_branch(self):
-        """Returns current branch's name"""
-        return self.branches()[0]
+    def head(self):
+        return 
 
-    def make_branch(self,name):
-        if subprocess.call([git_binary,"branch", name]):
+    def make_branch(self,name,startpoint="HEAD"):
+        if subprocess.call([git_binary,"branch", name, startpoint]):
             raise Exception("git branch failed")
 
     def has_diffs(self, treeish1, treeish2 ):
@@ -60,7 +64,7 @@ class repo:
         if subprocess.call([git_binary,"merge","--squash",treeish]):
             raise Exception("git merge --squash failed") 
 
-    def commit(self,allow_empty):
+    def commit(self,allow_empty=False):
         if allow_empty:
             if subprocess.call([git_binary,"commit","-a","--allow-empty"]):
                 raise Exception("git commit failed") 
@@ -90,19 +94,35 @@ class repo:
        if subprocess.call([git_binary,"pull"]):
             raise Exception("git pull failed")
 
+    def commits_ahead(self,a,b):
+        log = subprocess.check_output([git_binary,"log","--oneline",a+".."+b]).splitlines()
+        if len(log)==0:
+            return 0
+        else:
+            return len(log.splitlines())
+
     def get_status(self):
-        return subprocess.Popen([git_binary,"status"],stdout=subprocess.PIPE).communicate()[0]
+        return subprocess.check_output([git_binary,"status"])
+
+    def is_reachable(self,refx):
+        # all_refs = subprocess.check_output([git_binary,"show-ref","--heads","--tags"]).splitlines()
+        # ro = re.compile(r'[^ ]+ +' + re.escape(branch) + r'$')
+        # all_refs_but_x = filter( lambda r: not ro.match(r), all_refs )
+        # ro = re.compile(r'([^ ]+)')
+        # all_shas_but_x = map( lambda r: ro.match(r).group(1), all_refs_but_x )
+        # tmp = subprocess.check_output([git_binary,"log", refx, "--not"].append(all_shas_but_x)).splitlines()
+        # return len(tmp)==0
+        return True
 
     def get_log_graph(self,remote,nice,free):
-        base_nice = subprocess.Popen([git_binary,"merge-base",remote,nice],stdout=subprocess.PIPE).communicate()[0].rstrip()
-        base_free = subprocess.Popen([git_binary,"merge-base",remote,free],stdout=subprocess.PIPE).communicate()[0].rstrip()
+        base_nice = subprocess.check_output([git_binary,"merge-base",remote,nice]).rstrip()
+        base_free = subprocess.check_output([git_binary,"merge-base",remote,free]).rstrip()
         # todo: make more error prone: what if free is older, or if there are not more commits
-        return subprocess.Popen([git_binary,"log", "--graph", "--oneline","--decorate=short",\
-                                 base_nice + "^^.." + nice,\
-                                 base_free + "^^.." + free,\
-                                 base_nice + "^^.." + remote,\
-                                 base_free + "^^.." + remote \
-                                     ],stdout=subprocess.PIPE).communicate()[0]
+        return subprocess.check_output([git_binary,"log", "--graph", "--oneline","--decorate=short",\
+                                 base_nice + "^.." + nice,\
+                                 base_free + "^.." + free,\
+                                 base_nice + "^.." + remote,\
+                                 base_free + "^.." + remote ])
 
 
 #class commit:    
