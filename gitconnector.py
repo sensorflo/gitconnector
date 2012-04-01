@@ -51,6 +51,9 @@ help_msg = \
   '\n' 
 
 
+def abbrev_ref(ref):
+    return re.sub( r'^refs/(remotes/|heads/)?', "", ref)
+
 def release():
     repo = git.repo()
     has_local_changes = repo.has_local_changes()
@@ -120,10 +123,10 @@ def get_status_txt():
     txt += "\n"
     txt += "\n"
     txt += "--- current branch's friends ---\n"
-    txt += "current branch: " + repo.current_branch() + "\n"
-    txt += "remote branch : " + remote_branch + "\n" # x commits ahaed
-    txt += "nice branch   : " + nice_branch + "\n"   # x commits pushable into remot
-    txt += "free branch   : " + ugly_branch + "\n"   # x commits nice-able
+    txt += "current branch: " + abbrev_ref(repo.current_branch()) + "\n"
+    txt += "remote branch : " + abbrev_ref(remote_branch) + "\n" # x commits ahaed
+    txt += "nice branch   : " + abbrev_ref(nice_branch) + "\n"   # x commits pushable into remot
+    txt += "free branch   : " + abbrev_ref(ugly_branch) + "\n"   # x commits nice-able
     txt += "\n"
     txt += repo.get_log_graph(remote_branch,nice_branch,ugly_branch)
     # txt += "\nnice-able commits:\n"
@@ -168,8 +171,8 @@ def commit(explicit=False, ask_when_nice=True):
                 pre_msg = "You"
             else:
                 pre_msg = "You have local changes which need to be commited first. But you"
-            msg = pre_msg + " are on currently on a nice branch (" + nice_branch + "). " +\
-                  "Normally you want commit to the free branch (" + ugly_branch + ") " +\
+            msg = pre_msg + " are on currently on a nice branch (" + abbrev_ref(nice_branch) + "). " +\
+                  "Normally you want commit to the free branch (" + abbrev_ref(ugly_branch) + ") " +\
                   "and then use 'make branch nice'. " +\
                   "Continue committing to the nice branch?"
             if tkMessageBox.askyesno("", msg)==0:
@@ -228,15 +231,15 @@ def make_branch_nice():
     repo = git.repo()
     if is_nice_branch():
         if repo.has_local_changes():
-            msg = "You are already on the nice branch (" + nice_branch + ") and you " +\
+            msg = "You are already on the nice branch (" + abbrev_ref(nice_branch) + ") and you " +\
                 "you have local changes which a) you normally don't want to commit to " +\
                 "the nice branch and which b) prevents me from automatically switching " +\
-                "to the free branch (" + ugly_branch + "). Aborting."
+                "to the free branch (" + abbrev_ref(ugly_branch) + "). Aborting."
             tkMessageBox.showinfo("", msg )
             raise Exception("Aborted")
         else:    
-            msg = "You are already on the nice branch (" + nice_branch + "). " +\
-                "I will switch to free branch (" + ugly_branch + ") first."
+            msg = "You are already on the nice branch (" + abbrev_ref(nice_branch) + "). " +\
+                "I will switch to free branch (" + abbrev_ref(ugly_branch) + ") first."
             if tkMessageBox.askokcancel("", msg )==0:
                 raise Exception("Aborted by user")
             repo.checkout(ugly_branch)
