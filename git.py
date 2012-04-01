@@ -56,9 +56,12 @@ class repo:
             subprocess.call([git_binary,"diff", "--exit-code", "--cached"])
 
     def checkout(self,treeish):
-        if not self.current_branch()==treeish:
-            if subprocess.call([git_binary,"checkout",treeish]):
-                raise Exception("git checkout failed")
+        # if treeish is not a branch name, we'll be in detached head. So convert treeish
+        # to branch name if possible. A branch name is a name that, when prepended with
+        # "refs/heads/", is a valid ref (see git-commit, <branch> option)
+        treeish = re.sub( r'^refs/heads/', "", treeish )
+        if subprocess.call([git_binary,"checkout",treeish]):
+            raise Exception("git checkout failed")
         
     def merge_squash(self,treeish):
         if subprocess.call([git_binary,"merge","--squash",treeish]):

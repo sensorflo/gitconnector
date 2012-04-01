@@ -31,12 +31,16 @@ import git
 import tkMessageBox
 git_binary = "/usr/bin/git"
 
+# technically these are refs, not branch names. branch names are only what can
+# come after refs/head
 default_branch = "refs/heads/master"
 default_origin_branch = "refs/remotes/origin/master"
-nice_branch_regex = r'-nice$' # remember that both the nice and the ugly have a remote, so either of the two *has* two have a different name
 nice_branch = "refs/heads/master-nice" # todo: rename nice -> (nothing)
 ugly_branch = "refs/heads/master" # todo: rename ugly -> free
 remote_branch = "refs/remotes/origin/master"
+
+nice_branch_regex = r'-nice$' # remember that both the nice and the ugly have a remote, so either of the two *has* two have a different name
+
 
 # todo: rename sign-off to verified (according to git's option --no-verify) approved or certified or 
 sign_off_str = "Signed-off-by: git-dragon"
