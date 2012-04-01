@@ -76,7 +76,7 @@ class App:
     # 
     def make_branch_nice_button(self):
         try:
-            gitconnector.make_branch_nice()
+            gitconnector.make_branch_nice(explicit=True)
             self.update_status_button()
             tkMessageBox.showinfo("done","done")
         except Exception as e:
@@ -86,7 +86,7 @@ class App:
     # can easily be done by other GUIs
     def pull_button(self):
         try:
-            gitconnector.pull()
+            gitconnector.pull(explicit=True)
             self.update_status_button()
             tkMessageBox.showinfo("done","done")
         except Exception as e:
