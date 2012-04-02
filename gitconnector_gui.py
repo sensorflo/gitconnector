@@ -33,7 +33,7 @@ class App:
         frame = Frame(master)
         frame.pack()
 
-        self.text=Text(master,background='white',height=25) # height=25,width=100,
+        self.text=Text(master,background='white',height=25,wrap=NONE) # height=25,width=100,
         self.text.config(state=DISABLED)
         self.text.pack(expand=1,fill=BOTH,side=TOP)
         # self.text.scrolly=Scrollbar(self.text)
@@ -53,6 +53,10 @@ class App:
         self.make_nice.pack(side=LEFT)
         self.update_status = Button(frame, text="update status", command=self.update_status_button)
         self.update_status.pack(side=LEFT)
+        self.help_out = Button(frame, text="help me out", command=self.help_out_button)
+        self.help_out.pack(side=LEFT)
+        # todo: get me out of the shit button
+        
         self.update_status_button()
 
     # as the old 'release'
@@ -99,6 +103,12 @@ class App:
             self.text.delete("0.0",END)
             self.text.insert(END, txt )
             self.text.config(state=DISABLED)
+        except Exception as e:
+            tkMessageBox.showwarning("error",e)
+
+    def help_out_button(self):
+        try:
+            txt = gitconnector.help_out(explicit=True)
         except Exception as e:
             tkMessageBox.showwarning("error",e)
 

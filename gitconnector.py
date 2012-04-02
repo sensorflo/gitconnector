@@ -215,6 +215,12 @@ def get_status_txt():
     txt += "\n"
     return txt
 
+def help_out(explicit=False):
+    # check_detached_head()
+    msg = "Currently everything seems normal, you don't need  help. " +\
+          "(However I am currently also just a dummy button :-) )."
+    tkMessageBox.showinfo("", msg )
+
 def check_content():
     return
 
