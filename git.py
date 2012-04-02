@@ -73,6 +73,14 @@ class repo:
         if subprocess.call([git_binary,"branch", branch, startpoint]):
             raise Exception("git branch failed")
 
+    # todo: move to commit class
+    def t1containst2(self,treeish1,treeish2):
+        """Returns true if treeish1 contains treeish2. I.e. if treeish2 is an
+        anchestor of or equal to treeish2"""
+        rev_exp = treeish1 + ".." + treeish2
+        tmp = subprocess.check_output([git_binary,"rev-list","-n",str(1),rev_exp]).splitlines()
+        return len(tmp)==0
+
     def has_diffs(self, treeish1, treeish2 ):
         return subprocess.call([git_binary,"diff", "--exit-code", treeish1, treeish2])
 

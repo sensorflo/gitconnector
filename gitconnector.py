@@ -40,6 +40,11 @@ default_remote_branch = "refs/remotes/origin/master"
 # consistent
 no_branch = "(no branch)"
 
+RESET_FREE_WITH_BAK = 0
+RESET_FREE_NO_BAK = 1
+CONTINUE_ON_FREE = 2
+free_branch_cleanup = CONTINUE_ON_FREE
+
 # If a branch matches it is a nice branch, else it is a free branch. To convert
 # a nice branch name into an free branch name, the matching group 1 is removed
 nice_branch_regex = r'(-nice)$' 
@@ -156,14 +161,24 @@ def release(explicit=False):
 
     free = free_branch() 
     if free:
-        if not repo.is_reachable( free ):
-            repo.create_branch( unique_branch_name( free ), free)
-        # todo: if it is not the current branch, dont use checkout
-        repo.checkout(free)    
-        if not repo.has_local_changes():
-            repo.reset(remote_branch(),"hard")
+        # MAKE_BAK_OF_FREE = 0
+        # CONTINUE_ON_FREE = 1
+
+        if free_branch_cleanup==RESET_FREE_WITH_BAK or free_branch_cleanup==RESET_FREE_NO_BAK:
+            if free_branch_cleanup==RESET_FREE_WITH_BAK and not repo.is_reachable( free ):
+                repo.create_branch( unique_branch_name( free ), free)
+            # todo: if it is not the current branch, dont use checkout
+            repo.checkout(free)    
+            if not repo.has_local_changes():
+                repo.reset(remote_branch(),"hard")
+            else:
+                raise Exception("Internal error")
+
+        elif free_branch_cleanup==CONTINUE_ON_FREE:
+            pass 
+
         else:
-            raise Exception("Internal error")
+            raise Exception("internal error")
 
     if explicit:
         repo.checkout(saved_current_branch) # todo: what if it was deleted?
@@ -310,6 +325,7 @@ def make_branch_nice(explicit=False):
     # get free and nice branch and create as needed
     free = free_branch()
     nice = nice_branch()
+    remote = remote_branch()
     if nice and free:
         nice# nop
     elif nice and not free:
@@ -320,11 +336,19 @@ def make_branch_nice(explicit=False):
             raise Exception("Aborted")
         return
     elif not nice and free:
-        nice = nice_branch( allow_create=repo.merge_base(free,remote_branch() ) )
+        nice = nice_branch( allow_create=repo.merge_base(free, remote ) )
     else:
         raise Exception("Internal error")
     abbrev_nice = abbrev_ref(nice)
     abbrev_free = abbrev_ref(free)
+    abbrev_remote = abbrev_ref(remote)
+
+    # 
+    if not repo.t1containst2( nice, remote ):
+        msg = "Nice branch ( " + abbrev_nice + ") is not a descendant (i.e. 'newer') of or equal to " +\
+            "the remote branch (" + abbrev_remote +"). You have to pull first."
+        tkMessageBox.showerror("", msg )
+        raise Exception("Aborted")
 
     # commit local changes
     # However probably user dosn't want to commit to nice branch 
@@ -360,6 +384,14 @@ def make_branch_nice(explicit=False):
         msg = "Making-nice was successfull. Will now commit the new nice commit."
         tkMessageBox.showinfo("", msg)
         repo.commit()
+
+        # todo: shoudn't i do this always, except when the new nice commit is pushed?
+        if free_branch_cleanup==CONTINUE_ON_FREE:
+            repo.checkout(free)
+            # needed so when in future, when calling make-nice, which internaly
+            # squash-merges free into nice, there are no merge conflicts which
+            # arise because ??????????????????
+            repo.merge(nice)
 
     if explicit:
         repo.checkout(saved_current_branch)
