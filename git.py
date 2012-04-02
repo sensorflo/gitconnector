@@ -1,9 +1,25 @@
 #!/usr/bin/python 2.7
 import subprocess
 import re
+import os
 
 
 git_binary = "/usr/bin/git"
+
+def is_repo(path):
+    # cwd = os.getcwd()
+    # isrepo = True
+    # try:
+    #     os.chdir(path)
+    #     git.repo().get_status()
+    # except Exception as e:
+    #     isrepo = False
+    # os.chdir(cwd)
+    if path[-1]!="/":
+        path += "/"
+    return os.path.exists(path + ".git") or \
+        (os.path.exists(path + "HEAD") and os.path.exists(path + "refs"))
+        
 
 class commit:
     sha1 = 0

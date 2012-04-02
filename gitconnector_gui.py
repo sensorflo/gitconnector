@@ -2,10 +2,11 @@
 # gui for accessing functionality in git_dragon.py
 
 from Tkinter import *
-import tkMessageBox
+import tkMessageBox, tkFileDialog
 import gitconnector
 import os
 import re
+import git
 
 # release 
 #   make nice
@@ -27,6 +28,15 @@ import re
 # 
 
 
+# window title shall contain an abbreviated current working directory
+def set_window_title():
+    h = re.escape(os.environ['HOME'])
+    prefixes = [ h + "/src/" , h, "/DieBonder/" ]
+    cwd = os.getcwd()
+    for x in prefixes:
+        cwd = re.sub( x, "", cwd ) 
+    root.wm_title("git connector : " + cwd )
+
 class App:
 
     def __init__(self, master):
@@ -43,6 +53,8 @@ class App:
         # self.text.configure(xscrollcommand=self.text.scrollx.set) 
         # self.text.scrollx.pack(side=BOTTOM,fill=X)
 
+        self.release = Button(frame, text="open repo", command=self.open_button)
+        self.release.pack(side=LEFT)
         self.release = Button(frame, text="relase", command=self.release_button)
         self.release.pack(side=LEFT)
         self.commit = Button(frame, text="commit", command=self.commit_button)
@@ -58,6 +70,20 @@ class App:
         # todo: get me out of the shit button
         
         self.update_status_button()
+
+    def open_button(self):
+        try:
+            repo_path = tkFileDialog.askdirectory(title='open git repository')
+            if len(repo_path)==0:
+                return
+            if not git.is_repo(repo_path):
+                tkMessageBox.showerror("","Not a git repository")
+                return
+            os.chdir(repo_path)
+            set_window_title()
+            self.update_status_button()
+        except Exception as e:
+            tkMessageBox.showwarning("error",e)
 
     # as the old 'release'
     def release_button(self):
@@ -118,15 +144,7 @@ if len(sys.argv)>=2:
     os.chdir(sys.argv[1])
 
 root = Tk()
-
-# window title shall contain an abbreviated current working directory
-h = re.escape(os.environ['HOME'])
-prefixes = [ h + "/src/" , h, "/DieBonder/" ]
-cwd = os.getcwd()
-for x in prefixes:
-   cwd = re.sub( x, "", cwd ) 
-root.wm_title("git connector : " + cwd )
-
+set_window_title()
 app = App(root)
 root.mainloop()
 
