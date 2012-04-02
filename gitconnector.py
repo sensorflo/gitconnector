@@ -109,16 +109,18 @@ def check_detached_head():
     if not git.repo().current_branch():
         msg = "You have no branch checked out, i.e. you're in a detached head state. " +\
             "You need need to check out a branch first. Aborting."
-        tkMessageBox.showinfo("", msg )
+        tkMessageBox.showerror("", msg )
         raise Exception("Aborted")
 
-def release():
+def release(explicit=False):
     repo = git.repo()
     has_local_changes = repo.has_local_changes()
     # ahead = (repo.commits_ahead(repo.current_branch(),remote_branch)!=0)
     is_alreay_nice = False
 
     check_detached_head()
+
+    saved_current_branch = repo.current_branch()
     
     # nothing to do
     # if not has_local_changes and not ahead:
@@ -153,8 +155,18 @@ def release():
     repo.push( nice )
 
     free = free_branch() 
-    if free and not repo.is_reachable( free ):
-        repo.create_branch( unique_branch_name( free ), free);
+    if free:
+        if not repo.is_reachable( free ):
+            repo.create_branch( unique_branch_name( free ), free)
+        # todo: if it is not the current branch, dont use checkout
+        repo.checkout(free)    
+        if not repo.has_local_changes():
+            repo.reset(remote_branch(),"hard")
+        else:
+            raise Exception("Internal error")
+
+    if explicit:
+        repo.checkout(saved_current_branch) # todo: what if it was deleted?
 
     # remote
     # _has_changes = True # start with this assumption
@@ -191,7 +203,8 @@ def pull(explicit=False):
 
 def get_status_txt():
     # todo: emphasise when in merge/rebase conflict
-    context = 4
+    # todo: use same color for same branch names everywhere, also in graph log
+    context = 2
     plural = "s" if context>1 else ""
     repo = git.repo()
     txt = "--- current branch's friends ---\n"

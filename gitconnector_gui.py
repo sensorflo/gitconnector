@@ -30,11 +30,13 @@ import git
 
 # window title shall contain an abbreviated current working directory
 def set_window_title():
-    h = re.escape(os.environ['HOME'])
-    prefixes = [ h + "/src/" , h, "/DieBonder/" ]
+    h = os.environ['HOME']
+    if h[-1] != "/":
+        h += "/"
+    prefixes = [ h + "drives/xp/Projects/DieBonder/", h + "src/", h ]
     cwd = os.getcwd()
     for x in prefixes:
-        cwd = re.sub( x, "", cwd ) 
+        cwd = re.sub( re.escape(x), "", cwd ) 
     root.wm_title("git connector : " + cwd )
 
 class App:
@@ -55,11 +57,11 @@ class App:
 
         self.release = Button(frame, text="open repo", command=self.open_button)
         self.release.pack(side=LEFT)
-        self.release = Button(frame, text="relase", command=self.release_button)
+        self.release = Button(frame, text="release", command=self.release_button)
         self.release.pack(side=LEFT)
         self.commit = Button(frame, text="commit", command=self.commit_button)
         self.commit.pack(side=LEFT)
-        self.pull = Button(frame, text="pull (get)", command=self.pull_button)
+        self.pull = Button(frame, text="pull", command=self.pull_button)
         self.pull.pack(side=LEFT)
         self.make_nice = Button(frame, text="make branch nice", command=self.make_branch_nice_button)
         self.make_nice.pack(side=LEFT)
@@ -88,7 +90,7 @@ class App:
     # as the old 'release'
     def release_button(self):
         try:
-            gitconnector.release()
+            gitconnector.release(explicit=True)
             self.update_status_button()
             tkMessageBox.showinfo("done","done")
         except Exception as e:

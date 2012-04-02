@@ -21,6 +21,8 @@ class TestGitConnector(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()    
 
+# todo: test with large repos such as git / linux-kernel
+
 # tests by hand
 # 
 # on nice branch

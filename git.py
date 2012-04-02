@@ -67,8 +67,10 @@ class repo:
     def head(self):
         return 
 
-    def create_branch(self,name,startpoint="HEAD"):
-        if subprocess.call([git_binary,"branch", name, startpoint]):
+    def create_branch(self,ref,startpoint="HEAD"):
+        """Create a new branch with the name REF (given as ref, not as branch name)"""
+        branch = re.sub( r'^refs/heads/', "", ref )
+        if subprocess.call([git_binary,"branch", branch, startpoint]):
             raise Exception("git branch failed")
 
     def has_diffs(self, treeish1, treeish2 ):
@@ -99,7 +101,12 @@ class repo:
                 raise Exception("git commit failed") 
 
     def merge_base(self,treeish1,treeish2):
+        # todo: make shure the order of 1 2 is correct
         return subprocess.check_output([git_binary,"merge-base",treeish1,treeish2]).rstrip()
+
+    def parent_branch(self,treeish,parents=None):
+        # todo: finds the branch the treeish is branched off from
+        return
 
     def merge(self,treeish):
         if subprocess.call([git_binary,"merge","--commit",treeish]):
@@ -124,6 +131,7 @@ class repo:
             raise Exception("git pull failed")
 
     def commits_ahead(self,a,b):
+        # todo: cache
         log = subprocess.check_output([git_binary,"log","--oneline",a+".."+b]).splitlines()
         if len(log)==0:
             return 0
@@ -133,15 +141,16 @@ class repo:
     def get_status(self):
         return subprocess.check_output([git_binary,"status"])
 
-    def is_reachable(self,refx):
-        # all_refs = subprocess.check_output([git_binary,"show-ref","--heads","--tags"]).splitlines()
-        # ro = re.compile(r'[^ ]+ +' + re.escape(branch) + r'$')
-        # all_refs_but_x = filter( lambda r: not ro.match(r), all_refs )
-        # ro = re.compile(r'([^ ]+)')
-        # all_shas_but_x = map( lambda r: ro.match(r).group(1), all_refs_but_x )
-        # tmp = subprocess.check_output([git_binary,"log", refx, "--not"].append(all_shas_but_x)).splitlines()
-        # return len(tmp)==0
-        return True
+    def is_reachable(self,ref):
+        # todo: cache
+        # output: sha1<SP>fully-qualified-ref<NL>
+        all_refs = subprocess.check_output([git_binary,"show-ref","--heads","--tags"]).splitlines()
+        ro = re.compile(r'[^ ]+ +' + re.escape(ref) + r'$')
+        all_refs_but_x = filter( lambda r: not ro.match(r), all_refs )
+        ro = re.compile(r'([^ ]+)')
+        all_shas_but_x = map( lambda r: ro.match(r).group(1), all_refs_but_x )
+        tmp = subprocess.check_output([git_binary,"log", ref, "--not"] + all_shas_but_x).splitlines()
+        return len(tmp)==0
 
     def cut_parent_count(self,treeish,count):
         "Returns min of 1) count 2) the number of first parents of treeish, o"
@@ -149,6 +158,9 @@ class repo:
     def get_rev_range(self,start_treeish,end_treeish,count):
         """Return a revision range starting (incl.) at the count'th parent of
         start_treeish and ends (incl) end_treeish."""
+
+        # todo: cache
+
         # + 1 because one line is the start_treeish itself
         # + another 1 because we want to see if there would be more 
         cmd = [git_binary,"rev-list","--first-parent","-n",str(count+2),start_treeish]
@@ -181,12 +193,17 @@ class repo:
         if not refs:
             refs.append( self.get_rev_range( "HEAD", "HEAD", context ) )
         # todo: make more error prone: what if free is older, or if there are
-        # not more commits
+        # not more commits todo: maybe 'show-branch --merge-base' or merge-base
+        # can be used to find the 'oldest' common anchestor from which we want
+        # or use 'branch (--merged | --no-merged | --contains)' ??
+
+        # to go context commits back
+        # todo: also give context on 'top' of graph
         if not refs:
             return ""
         else:
-            tmp = [git_binary,"log", "--graph", "--oneline", "--decorate=short"]
-            tmp.extend(refs)
-            return subprocess.check_output( tmp )
+            cmd = [git_binary,"log", "--graph", "--oneline", "--first-parent", "--decorate=short"]
+            cmd.extend(refs)
+            return subprocess.check_output( cmd )
 
 #class commit:    
