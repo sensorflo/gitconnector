@@ -4,6 +4,8 @@
 from Tkinter import *
 import tkMessageBox
 import gitconnector
+import os
+import re
 
 # release 
 #   make nice
@@ -101,8 +103,20 @@ class App:
             tkMessageBox.showwarning("error",e)
 
 
+# change working dir if requested
+if len(sys.argv)>=2:
+    os.chdir(sys.argv[1])
+
 root = Tk()
-root.wm_title("git connector")
+
+# window title shall contain an abbreviated current working directory
+h = re.escape(os.environ['HOME'])
+prefixes = [ h + "/src/" , h, "/DieBonder/" ]
+cwd = os.getcwd()
+for x in prefixes:
+   cwd = re.sub( x, "", cwd ) 
+root.wm_title("git connector : " + cwd )
+
 app = App(root)
 root.mainloop()
 
