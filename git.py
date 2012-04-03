@@ -73,6 +73,11 @@ class repo:
         if subprocess.call([git_binary,"branch", branch, startpoint]):
             raise Exception("git branch failed")
 
+    def delete_branch(self,ref,force=False):
+        branch = re.sub( r'^refs/heads/', "", ref )
+        if subprocess.call([git_binary,"branch", "-D" if force else "-d", branch]):
+            raise Exception("git branch -d failed")
+        
     # todo: move to commit class
     def t1containst2(self,treeish1,treeish2):
         """Returns true if treeish1 contains treeish2. I.e. if treeish2 is an
@@ -80,6 +85,10 @@ class repo:
         rev_exp = treeish1 + ".." + treeish2
         tmp = subprocess.check_output([git_binary,"rev-list","-n",str(1),rev_exp]).splitlines()
         return len(tmp)==0
+
+    # todo: move to commit class
+    def get_sha1(self,treeish):
+        return subprocess.check_output([git_binary,"rev-list","-n",str(1),treeish]).rstrip()
 
     def has_diffs(self, treeish1, treeish2 ):
         return subprocess.call([git_binary,"diff", "--exit-code", treeish1, treeish2])
@@ -132,10 +141,10 @@ class repo:
         if subprocess.call([git_binary,"reset","--" + mode,treeish]):
             raise Exception("git reset failed")
 
-    def pull(self):
+    def pull(self,remote,ref):
         # todo: clone if not already exists. however, wasnt that done upon registering?
         # flag 'rewrite-local-commits' decides wheter --rebase is allowed
-       if subprocess.call([git_binary,"pull"]):
+       if subprocess.call([git_binary,"pull",remote, ref]):
             raise Exception("git pull failed")
 
     def commits_ahead(self,a,b):

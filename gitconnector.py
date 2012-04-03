@@ -42,8 +42,10 @@ no_branch = "(no branch)"
 
 RESET_FREE_WITH_BAK = 0
 RESET_FREE_NO_BAK = 1
-CONTINUE_ON_FREE = 2
+DELETE_FREE = 2      # After push, after asking, free is deleted
+CONTINUE_ON_FREE = 3 # changes to remote branch are always merged into free
 free_branch_cleanup = CONTINUE_ON_FREE
+delete_nice_after_push = True
 
 # If a branch matches it is a nice branch, else it is a free branch. To convert
 # a nice branch name into an free branch name, the matching group 1 is removed
@@ -150,7 +152,7 @@ def release(explicit=False):
     
     # pull before make_branch_nice, because after make_branch_nice we want have
     # low probability to have to merge again
-    repo.pull()
+    pull()
     make_branch_nice()
 
     nice = nice_branch() 
@@ -158,11 +160,16 @@ def release(explicit=False):
         raise Exception("Internal error") # make_branch_nice should have created one
     repo.checkout( nice ) # todo: is that really needed?
     repo.push( nice )
-
+    
     free = free_branch() 
     if free:
-        # MAKE_BAK_OF_FREE = 0
-        # CONTINUE_ON_FREE = 1
+        # remote has changed since nice was pushed into it -> merge those
+        # commits into free. But only if we don't throw away the free branch anyway
+        # todo: only call pull for free
+        # todo: what happens if we got interrupted before (e.g. merge conflicts)?
+        if not (free_branch_cleanup==DELETE_FREE or free_branch_cleanup==RESET_FREE_NO_BAK):
+           repo.checkout(free)
+           repo.merge(remote_branch())
 
         if free_branch_cleanup==RESET_FREE_WITH_BAK or free_branch_cleanup==RESET_FREE_NO_BAK:
             if free_branch_cleanup==RESET_FREE_WITH_BAK and not repo.is_reachable( free ):
@@ -174,11 +181,29 @@ def release(explicit=False):
             else:
                 raise Exception("Internal error")
 
-        elif free_branch_cleanup==CONTINUE_ON_FREE:
-            pass 
+        elif free_branch_cleanup==DELETE_FREE:
+            repo.delete_branch(free,force=True)
 
+        elif free_branch_cleanup==CONTINUE_ON_FREE:
+            pass
+        
         else:
             raise Exception("internal error")
+
+        # update local variable 
+        free = free_branch()
+
+    if nice and delete_nice_after_push:
+        # todo: only if the commit referenced by nice is referenced by something else
+        #       however since we just pushed it into remote, that should always be the case
+        # todo: first checkout free (hmm, is done aboth), or go into detached head
+        free_sha1 = repo.get_sha1(free) if free else None
+        nice_sha1 = repo.get_sha1(nice)
+        if nice_sha1==free_sha1:
+            repo.checkout(free)
+        else:
+            repo.checkout(nice_sha1)
+        repo.delete_branch(nice)
 
     if explicit:
         repo.checkout(saved_current_branch) # todo: what if it was deleted?
@@ -199,14 +224,15 @@ def pull(explicit=False):
 
     commit()
 
-    # update free_branch
+    # merge updated remote branch into free branch
     free = free_branch() 
     if free:
         repo.checkout(free)
-        repo.pull()
+        repo.pull("origin",free)
 
-    # update nice_branch todo: what if the above pull fails? Then the
-    # nice_branch is not rebased which leads to troubles later
+    # rebase nice branch onto updated remote
+    # todo: what if the above pull fails? Then the nice_branch is not rebased which leads to troubles later
+    # todo: should be done automatically within pull if nice-brancg is setuped correctly
     nice = nice_branch() 
     if nice:
         repo.checkout(nice)
@@ -243,6 +269,7 @@ def get_status_txt():
     txt += "\n"
     return txt
 
+# aka 'sanitize'
 def help_out(explicit=False):
     # check_detached_head()
     msg = "Currently everything seems normal, you don't need  help. " +\
@@ -360,7 +387,7 @@ def make_branch_nice(explicit=False):
                 "to the free branch (" + abbrev_free + "). Aborting."
             tkMessageBox.showinfo("", msg )
             raise Exception("Aborted")
-        else:
+        elif explicit:
             msg = "You are on the nice branch (" + abbrev_nice + "). " +\
                 "I will switch to free branch (" + abbrev_free + ") first."
             if tkMessageBox.askokcancel("", msg )==0:
@@ -384,14 +411,6 @@ def make_branch_nice(explicit=False):
         msg = "Making-nice was successfull. Will now commit the new nice commit."
         tkMessageBox.showinfo("", msg)
         repo.commit()
-
-        # todo: shoudn't i do this always, except when the new nice commit is pushed?
-        if free_branch_cleanup==CONTINUE_ON_FREE:
-            repo.checkout(free)
-            # needed so when in future, when calling make-nice, which internaly
-            # squash-merges free into nice, there are no merge conflicts which
-            # arise because ??????????????????
-            repo.merge(nice)
 
     if explicit:
         repo.checkout(saved_current_branch)
