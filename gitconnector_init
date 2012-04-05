@@ -1,15 +1,17 @@
 #!/bin/bash
 
+# Dumb script to setup 3 git repos with which gitconnector can be tested. 1
+# 'remote', 2 'locals' Dumb because it is very static, all paths are hard coded.
+
 # export PATH=~/bin/gitconnector:"$PATH"
 
-# mkdir -p ~/src
-# cd ~/src
-# git clone https://sensorflo@github.com/sensorflo/gitconnector.git
+mkdir -p ~/bin/gitconnector/test/
+cd ~/bin/gitconnector/test/
 
-ln -s ~/src/gitconnector ~/bin/gitconnector
-
-mkdir -p ~/src/gitconnector/test/
-cd ~/src/gitconnector/test/
+# create initial repo. It is most probably not really needed, I just didnt found
+# another way to start with a bare remote repo - because then all repos are
+# empty, I cant create a nice branch into which I could checkin my first signed
+# off commit
 mkdir initial
 cd initial
 git init
@@ -17,24 +19,28 @@ echo hello world >> main.cpp
 git add main.cpp
 git commit -a -m $'initial\nSigned-off-by: git-dragon'
 
-cd ~/src/gitconnector/test/
+# create bare remote repo, cloning from initial
+cd ~/bin/gitconnector/test
 git clone --bare initial remote
 ln ~/bin/gitconnector/update remote/hooks/update
 
-cd ~/src/gitconnector/test/
-git clone remote local1
-ln ~/bin/gitconnector/pre-commit local1/.git/hooks/pre-commit
-ln ~/bin/gitconnector/prepare-commit-msg local1/.git/hooks/prepare-commit
-ln ~/bin/gitconnector/commit-msg local1/.git/hooks/commit-msg
-git clone remote local2
-ln ~/bin/gitconnector/pre-commit local2/.git/hooks/pre-commit
-ln ~/bin/gitconnector/prepare-commit-msg local2/.git/hooks/prepare-commit
-ln ~/bin/gitconnector/commit-msg local2/.git/hooks/commit-msg
+remove intial repo 
+rm -rf ~/bin/gitconnector/initial 
 
-# that ^%$darnit^%$ still doesnt work
-cd ~/src/gitconnector/test/local1
-git branch --track master-nice origin/master
-cd ~/src/gitconnector/test/local2
-git branch --track master-nice origin/master
+# create local repos bob & sally, cloning from remote
+cd ~/bin/gitconnector/test/
+git clone remote bob
+ln ~/bin/gitconnector/pre-commit bob/.git/hooks/pre-commit
+ln ~/bin/gitconnector/prepare-commit-msg bob/.git/hooks/prepare-commit
+ln ~/bin/gitconnector/commit-msg bob/.git/hooks/commit-msg
+git clone remote sally
+ln ~/bin/gitconnector/pre-commit sally/.git/hooks/pre-commit
+ln ~/bin/gitconnector/prepare-commit-msg sally/.git/hooks/prepare-commit
+ln ~/bin/gitconnector/commit-msg sally/.git/hooks/commit-msg
 
-# date >> main.cpp; git commit -a -m "$(date)"
+# create the required master-nice branch in the local repos
+# cd ~/bin/gitconnector/test/bob
+# git branch --track master-nice origin/master
+# cd ~/bin/gitconnector/test/sally
+# git branch --track master-nice origin/master
+
