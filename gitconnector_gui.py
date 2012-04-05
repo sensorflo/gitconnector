@@ -1,5 +1,6 @@
 #!/usr/bin/python2.7
-# gui for accessing functionality in git_dragon.py
+# gui for accessing gitconnector.py
+# See file README for info what gitconnector is
 
 from Tkinter import *
 import tkMessageBox, tkFileDialog
@@ -7,26 +8,6 @@ import gitconnector
 import os
 import re
 import git
-
-# release 
-#   make nice
-#   pull
-#     fetch
-#     merge/rebase
-#   push  
-#
-# Always on top level: commit
-#
-#
-# Show in status pane. That is neccessairy to no a bit where you are. Without
-# any info, it feels very free floating. But keep it very dump! Use other GUIs
-# for more convenient info.
-# - git status, i.e added/deleted/changed files
-# - no of pushable commits on nice branch,
-# - no of nice-able commits on free branch
-# - git log --graph --oneline 
-# 
-
 
 # window title shall contain an abbreviated current working directory
 def set_window_title():

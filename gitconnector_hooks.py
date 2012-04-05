@@ -1,6 +1,10 @@
 #!/usr/bin/python2.7
 # 
+# A script to be called by git hooks which then delegates the calls to
+# gitconnector core
 # 
+# See file README for info what gitconnector is
+
 import sys
 import gitconnector
 

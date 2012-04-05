@@ -1,4 +1,11 @@
 #!/usr/bin/python 2.7
+
+# A wrapper around git (i.e. the git binary). Should be replaced by an existing
+# API binding. See for example
+# http://stackoverflow.com/questions/4034962/which-language-has-the-best-git-api-bindings.
+
+# See file README for what gitconnector is
+
 import subprocess
 import re
 import os

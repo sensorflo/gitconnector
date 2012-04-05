@@ -1,35 +1,11 @@
 #!/usr/bin/python2.7
-# Core functionality to tailor git for the dragon project
-
-# responsibilities/goals, ordered after prio:
-# - Central repo adheres to dragon guidelines.
-# - Simple and easy standart use cases
-#   - refine local state so it is 'nice' and thus pushable to central repo
-#   - push to central repo
-#   - pull from central repo
-#   - all that for 'main' branch
-# 
-# - Local repo can be anything. The point of DVCS is to locally do whatever you like.
-#   - However git dragon is only required to be able to work with a set of predefined states 
-#   - Engineers should be allowed any git tool/frontend they like
-# 
-# - We don't have the (HW) infrastructure to do expensive compile test on the
-#   central server side. Thus the compile test must remain, as with
-#   vssconnector, on the client side.
-# 
-# - Does not undertake countermeassures against 'malicous' co-workers - we don't
-#   have them. If somebody really want's to circumvent the checks he can do it
-#   anyway.
-#
-# vssconnector was needed because vss is so bad. gitconnector is needed because
-# a) git offers so many workflows
-#
+# Core functionality 
+# See file README for info what gitconnector is
 
 import subprocess
 import re
 import git
 import tkMessageBox
-git_binary = "/usr/bin/git"
 
 # technically these are refs, not branch names. branch names are only what can
 # come after refs/head
