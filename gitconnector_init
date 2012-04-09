@@ -31,11 +31,11 @@ rm -rf ~/bin/gitconnector/initial
 cd ~/bin/gitconnector/test/
 git clone remote bob
 ln ~/bin/gitconnector/pre-commit bob/.git/hooks/pre-commit
-ln ~/bin/gitconnector/prepare-commit-msg bob/.git/hooks/prepare-commit
+ln ~/bin/gitconnector/prepare-commit-msg bob/.git/hooks/prepare-commit-msg
 ln ~/bin/gitconnector/commit-msg bob/.git/hooks/commit-msg
 git clone remote sally
 ln ~/bin/gitconnector/pre-commit sally/.git/hooks/pre-commit
-ln ~/bin/gitconnector/prepare-commit-msg sally/.git/hooks/prepare-commit
+ln ~/bin/gitconnector/prepare-commit-msg sally/.git/hooks/prepare-commit-msg
 ln ~/bin/gitconnector/commit-msg sally/.git/hooks/commit-msg
 
 # create the required master-nice branch in the local repos

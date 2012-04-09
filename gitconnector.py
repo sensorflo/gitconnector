@@ -397,7 +397,7 @@ def make_branch_nice(explicit=False):
     # actually do it
     elif has_diffs:
         repo.checkout(nice)
-        repo.merge_squash(free)
+        repo.merge_squash(free,commit_msg=help_msg)
         msg = "Making-nice was successfull. Will now commit the new nice commit."
         tkMessageBox.showinfo("", msg)
         repo.commit()
@@ -450,7 +450,8 @@ def prepare_commit_msg_hook(args):
         f = open(filename, 'r+')
         msg = f.read()
 
-        msg = help_msg + re.sub(r'(?m)^#.*$',"",msg) + '\n' + no_verify_sign_off_str
+        msg +=  '\n' + no_verify_sign_off_str
+        # msg = help_msg + re.sub(r'(?m)^#.*$',"",msg) + '\n' + no_verify_sign_off_str
         # todo: when user commits with --no-verify, automatically
         # insert the reason here (maybe its better to not support that
         # convenience. We want to make it cumbersome to commit without verify).

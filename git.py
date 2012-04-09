@@ -9,7 +9,7 @@
 import subprocess
 import re
 import os
-
+import pipes
 
 git_binary = "/usr/bin/git"
 
@@ -112,17 +112,19 @@ class repo:
         if subprocess.call([git_binary,"checkout",treeish]):
             raise Exception("git checkout failed")
         
-    def merge_squash(self,treeish):
-        if subprocess.call([git_binary,"merge","--squash",treeish]):
+    def merge_squash(self,treeish,commit_msg=None):
+        if subprocess.call([git_binary,"merge","--squash","--no-commit",treeish]):
             raise Exception("git merge --squash failed") 
+        self.commit(commit_msg=commit_msg)
 
-    def commit(self,allow_empty=False):
+    def commit(self,allow_empty=False,commit_msg=None):
+        cmd = [git_binary,"commit","-a"]
         if allow_empty:
-            if subprocess.call([git_binary,"commit","-a","--allow-empty"]):
-                raise Exception("git commit failed") 
-        else:
-            if subprocess.call([git_binary,"commit","-a"]):
-                raise Exception("git commit failed") 
+            cmd.append("--allow-empty")
+        if commit_msg:
+            cmd.extend(["-m",pipes.quote(commit_msg),"--edit"])
+        if subprocess.call(cmd):
+            raise Exception("git commit failed") 
 
     def merge_base(self,treeish1,treeish2):
         # todo: make shure the order of 1 2 is correct
