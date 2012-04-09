@@ -140,18 +140,44 @@ class repo:
         if subprocess.call([git_binary,"rebase",treeish]):
             raise Exception("git rebase failed") 
 
-    def push(self,treeish):
-        if subprocess.call([git_binary,"push","origin",treeish + ":master"]):
+    def push(self,remote=None,refspec=None):
+        cmd = [git_binary,"push"]
+        if not remote:
+            remote = "origin"
+        cmd.append(remote)
+        if not refspec:
+            refspec = "master-nice:master"
+        cmd.append(refspec)
+        print cmd
+        if subprocess.call(cmd):
             raise Exception("git push failed")
 
     def reset(self,treeish,mode):
         if subprocess.call([git_binary,"reset","--" + mode,treeish]):
             raise Exception("git reset failed")
 
-    def pull(self,remote,ref):
+    def fetch(self,remote=None,refspec=None):
+        # The defaults make sure that a misconfigured config file does not
+        # influence gitconnector.
+        # Always fetching all refs is not as efficient as it could be, but its
+        # git's default and its easy, simple. Only getting what is needed is more
+        # error prone, confusing
+        cmd = [git_binary,"fetch"]
+        if not remote:
+            remote = "origin"
+        cmd.append(remote)
+        if not refspec:
+            refspec = "+refs/heads/*:refs/remotes/origin/*"
+        cmd.append(refspec)
+        print cmd
+        if subprocess.call(cmd):
+            raise Exception("git fetch failed")
+
+    def pull(self,remote,refspec):
         # todo: clone if not already exists. however, wasnt that done upon registering?
         # flag 'rewrite-local-commits' decides wheter --rebase is allowed
-       if subprocess.call([git_binary,"pull",remote, ref]):
+        print cmd
+        if subprocess.call([git_binary,"pull",remote, refspec]):
             raise Exception("git pull failed")
 
     def commits_ahead(self,a,b):

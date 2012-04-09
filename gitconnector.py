@@ -11,10 +11,13 @@ import tkMessageBox
 # come after refs/head
 default_nice_branch = "refs/heads/master-nice" 
 default_free_branch = "refs/heads/master"
-default_remote_branch = "refs/remotes/origin/master"
+default_remote_branch = "refs/remotes/origin/master" # todo: rename to remote tracking branch??
 # the same string 'git branch' uses. Is not required, but is more
 # consistent
 no_branch = "(no branch)"
+# todo: customizeable fetch/push refspec, merge/rebase options for nice/free
+#       dont use gits
+
 
 RESET_FREE_WITH_BAK = 0
 RESET_FREE_NO_BAK = 1
@@ -57,7 +60,7 @@ def free_branch(allow_create=False, str_if_none=False):
             if not repo.has_branch(proposed_branch):
                 if allow_create:
                     result = proposed_branch
-                    repo.create_branch(proposed_branch,allow_create)
+                    repo.create_branch(proposed_branch,startpoint=remote_branch())
             else:
                 result = proposed_branch
     if not result and str_if_none:
@@ -76,8 +79,8 @@ def nice_branch(allow_create=False, str_if_none=False):
             proposed_branch = current_branch + "-nice"
             if not repo.has_branch(proposed_branch):
                 if allow_create:
-                    repo.create_branch(proposed_branch,allow_create)
-                    result = nice_branch
+                    result = proposed_branch
+                    repo.create_branch(proposed_branch,startpoint=remote_branch())
             else:
                 result = proposed_branch
     if not result and str_if_none:
@@ -134,8 +137,8 @@ def release(explicit=False):
     nice = nice_branch() 
     if not nice:
         raise Exception("Internal error") # make_branch_nice should have created one
-    repo.checkout( nice ) # todo: is that really needed?
-    repo.push( nice )
+    # repo.checkout( nice ) # todo: is that really needed?
+    repo.push( None, nice + ":master" ) # todo: how to make less explicit?
     
     free = free_branch() 
     if free:
@@ -166,7 +169,7 @@ def release(explicit=False):
         else:
             raise Exception("internal error")
 
-        # update local variable 
+        # free branch has changed -> update local variable 
         free = free_branch()
 
     if nice and delete_nice_after_push:
@@ -199,20 +202,25 @@ def pull(explicit=False):
     saved_current_branch = repo.current_branch()
 
     commit()
+    remote = remote_branch() 
 
-    # merge updated remote branch into free branch
+    # fetch. Dont use pull because we anyway have to local branches two deal
+    # with: free and nice
+    repo.fetch()
+
+    # merge (updated) remote branch into free branch
     free = free_branch() 
     if free:
         repo.checkout(free)
-        repo.pull("origin",free)
+        repo.merge(remote)
 
-    # rebase nice branch onto updated remote
+    # rebase nice branch onto (updated) remote branch
     # todo: what if the above pull fails? Then the nice_branch is not rebased which leads to troubles later
     # todo: should be done automatically within pull if nice-brancg is setuped correctly
     nice = nice_branch() 
     if nice:
         repo.checkout(nice)
-        repo.rebase(remote_branch())
+        repo.rebase(remote)
 
     if explicit:
         repo.checkout(saved_current_branch)
@@ -321,13 +329,19 @@ def make_branch_nice(explicit=False):
     # todo: if the user commits stuff on the nice branch directly and later
     # makes nice he has merge conflicts everytime he runs make nice
 
+    # idea: use default refspec, config & co
+    # push free to nice not possible because that only works when it would be an
+    # fast forward for nice
+    # pull free from nice with --squash merge option probably possible, but pull default
+    # should be so that it works fine for pulling from remote
+
     repo = git.repo()
     check_detached_head()
     saved_current_branch = repo.current_branch()
 
     # get free and nice branch and create as needed
     free = free_branch()
-    nice = nice_branch()
+    nice = nice_branch(allow_create=True)
     remote = remote_branch()
     if nice and free:
         nice# nop
