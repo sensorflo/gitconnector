@@ -24,7 +24,7 @@ cd ~/bin/gitconnector/test
 git clone --bare initial remote
 ln ~/bin/gitconnector/update remote/hooks/update
 
-remove intial repo 
+# remove intial repo 
 rm -rf ~/bin/gitconnector/initial 
 
 # create local repos bob & sally, cloning from remote
