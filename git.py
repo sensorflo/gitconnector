@@ -122,7 +122,7 @@ class repo:
         if allow_empty:
             cmd.append("--allow-empty")
         if commit_msg:
-            cmd.extend(["-m",pipes.quote(commit_msg),"--edit"])
+            cmd.extend(["-m",commit_msg,"--edit"])
         if subprocess.call(cmd):
             raise Exception("git commit failed") 
 
