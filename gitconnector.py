@@ -98,7 +98,7 @@ def check_detached_head():
         tkMessageBox.showerror("", msg )
         raise Exception("Aborted")
 
-def release(explicit=False):
+def publish(explicit=False):
     repo = git.repo()
     has_local_changes = repo.has_local_changes()
     # ahead = (repo.commits_ahead(repo.current_branch(),remote_branch)!=0)
@@ -183,9 +183,17 @@ def release(explicit=False):
         else:
             repo.checkout(nice_sha1)
         repo.delete_branch(nice)
+        nice = None
 
     if explicit:
-        repo.checkout(saved_current_branch) # todo: what if it was deleted?
+        if repo.has_branch(saved_current_branch):
+            repo.checkout(saved_current_branch)
+        elif free:
+            repo.checkout(free)
+        elif nice:
+            repo.checkout(nice)
+        # else: don't do anything, stay where we are
+
 
     # remote
     # _has_changes = True # start with this assumption
@@ -233,10 +241,10 @@ def get_status_txt():
     plural = "s" if context>1 else ""
     repo = git.repo()
     txt = "--- current branch's friends ---\n"
-    txt += "current branch: " + abbrev_ref(repo.current_branch(str_if_none=True)) + "\n"
-    txt += "free branch   : " + abbrev_ref(free_branch(str_if_none=True)) + "\n"   # x commits nice-able
-    txt += "nice branch   : " + abbrev_ref(nice_branch(str_if_none=True)) + "\n"   # x commits pushable into remot
-    txt += "remote branch : " + abbrev_ref(remote_branch(str_if_none=True)) + "\n" # x commits ahaed
+    txt += "current branch         : " + abbrev_ref(repo.current_branch(str_if_none=True)) + "\n"
+    txt += "free branch            : " + abbrev_ref(free_branch(str_if_none=True)) + "\n"   # x commits nice-able
+    txt += "nice branch            : " + abbrev_ref(nice_branch(str_if_none=True)) + "\n"   # x commits pushable into remot
+    txt += "remote tracking branch : " + abbrev_ref(remote_branch(str_if_none=True)) + "\n" # x commits ahaed
     txt += "\n"
     txt += "log extract:\n"
     txt += repo.get_log_graph(remote_branch(),nice_branch(),free_branch(),context)
@@ -254,7 +262,7 @@ def get_status_txt():
     return txt
 
 # aka 'sanitize'
-def help_out(explicit=False):
+def help(explicit=False):
     # check_detached_head()
     msg = "Currently everything seems normal, you don't need  help. " +\
           "(However I am currently also just a dummy button :-) )."
@@ -468,6 +476,9 @@ def prepare_commit_msg_hook(args):
 # front-ends not provding/offering the --signoff option
 def commit_msg_hook(filename):
     if is_nice_branch():
+        # check conformoty of msg:
+        # - brief 'line' contains no newlines (any style)
+
         print "git-dragon: checks passed. signing off commit"
         f = open(filename, 'r+')
         msg = f.read()
