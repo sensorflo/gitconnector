@@ -80,15 +80,29 @@ release does almost everything together:
 
 - pull
 
-  - fetch
+  - fetch all remote refs
 
-  - merge free branch
+  - merge remote tracking branch into free branch
 
-  - rebase nice branch
+  - rebase nice branch onto remote tracking branch
 
-- make nice = merge-squash free onto nice
+- make nice = merge-squash free into/onto nice
 
 - push nice branch
 
 .. Always on top level: commit
 
+
+todo / ideas
+--------------------------------------------------
+
+- gitconnector can run in different modes: a) dummy/verbose and b)
+  expert/normal. In dummy mode much more info is shown, more is asked etc.
+
+- status windows clearly visibel shows when repo is in merge/rebase conflict. 
+  - most commands cannot even be started. Precondition check fails.	
+
+- when free is tracking remote, the '# of commits ahead' count is not what I
+  expect.
+
+- make use of branches dir for a per branch refspec	
