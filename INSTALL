@@ -1,0 +1,15 @@
+The paths are currently very static, sorry
+
+1) Download the sources into your ~/src directory
+	 cd ~/src
+   git clone git://github.com/sensorflo/gitconnector.git
+
+2) Run the init script which basically sets up test git repositories 	 
+   cd ~/src/gitconnector
+	 gitconnector_init
+
+3) Add the binaries to the PATH environment variable
+   (for bash) export PATH=~/bin/gitconnector:"$PATH"
+
+4) Run gitconnector with where the optional argument repo is the path to the git repository
+   gitconnector_gui [repo]

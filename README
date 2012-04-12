@@ -1,5 +1,15 @@
 .. This document is in reStructuredText format
 
+.. Files:
+.. - git-docu.uml
+..   UML diagrams visualizing git concepts. Format is ArgoUML (http://argouml.tigris.org/)
+.. - gitconnector_tutorial.txt
+..   Tutorial on git & gitconnector. It's HTML output is used by gitconnector as help page.
+.. - *.py
+..   Python source code of gitconnector. 
+.. - pre-commit, commit-msg, ... (git hook names)
+..   Well, nataurally the git hook scripts.
+
 gitconnector
 ======================================================================
 
