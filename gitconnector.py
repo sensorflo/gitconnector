@@ -43,6 +43,9 @@ help_msg = \
   '\n' 
 
 
+def version():
+    return "0.2"
+
 # should probable be name get_branch_name or the like?
 def abbrev_ref(ref):
     return re.sub( r'^refs/(remotes/|heads/)?', "", ref)

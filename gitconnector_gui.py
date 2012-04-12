@@ -36,33 +36,46 @@ class App:
         # self.text.configure(xscrollcommand=self.text.scrollx.set) 
         # self.text.scrollx.pack(side=BOTTOM,fill=X)
 
-        also_with_other = "You can do the same, maybe even more conveniently, with any other git frontend (tortoiseGit, SmartGit,...)"
+        also_with_other = "You can do the same, maybe even more conveniently, with any other git frontend (tortoiseGit, SmartGit, ...)"
 
-        self.open = Button(frame, text="open repo", command=self.open_button)
-        self.open.pack(side=LEFT)
-        ToolTip(self.open, text='Open another git repo to work with.')
-        self.publish = Button(frame, text="publish", command=self.publish_button)
+        self.publish = Button(frame, text="Publish", command=self.publish_button)
         self.publish.pack(side=LEFT)
         ToolTip(self.publish, text='Publish your local work work. Is composed of 1) Commit 2) Pull 3) Make free branch nice 4) Push nice branch. Loosly corresponds to VssConnectors "Build Release"')
-        self.commit = Button(frame, text="commit", command=self.commit_button)
+        self.commit = Button(frame, text="Commit", command=self.commit_button)
         self.commit.pack(side=LEFT)
         # todo: change tooltip in case of rebase
         ToolTip(self.commit, text='This button has multiple functions\n\nWhen labeled commit: Commits your changes of the working tree and/or the index into the current branch.\n\nWhen labeled continue rebase: After you manually resolved merge conflicts while being in a rebase, this continues the rebase.\n\n' + also_with_other )
-        self.pull = Button(frame, text="pull", command=self.pull_button)
+        self.pull = Button(frame, text="Pull", command=self.pull_button)
         self.pull.pack(side=LEFT)
         ToolTip(self.pull, text='1) Fetches any new commits of the remote repo 2) Merges branch origin/master into your free branch 3) Rebases (similar to merging) your nice branch onto origin/master. Loosly corresponds to VssConnectors "Get Latest"')
-        self.make_nice = Button(frame, text="make branch nice", command=self.make_branch_nice_button)
+        self.make_nice = Button(frame, text="Make branch nice", command=self.make_branch_nice_button)
         self.make_nice.pack(side=LEFT)
         ToolTip(self.make_nice, text='Creates/updates the nice branch using the free branch. That squashes all (un-verifified) commits of the free branch in one single verified commit on the nice branch. A commit on the nice branch only succeeds if it passes our verification (e.g it must compile).')
-        self.abort = Button(frame, text="abort", command=self.abort_button)
+        self.abort = Button(frame, text="Abort", command=self.abort_button)
         self.abort.pack(side=LEFT)
         ToolTip(self.abort, text="Aborts a running merge / rebase / am (apply-mailbox) and brings you back to the state before the merge / rebase / am. " + also_with_other )
-        self.update_status = Button(frame, text="update status", command=self.update_status_button)
+        self.update_status = Button(frame, text="Update Status", command=self.update_status_button)
         self.update_status.pack(side=LEFT)
         ToolTip(self.update_status, text='Updates the content of the status pane')
-        self.help = Button(frame, text="help", command=self.help_button)
+        self.help = Button(frame, text="Help Out", command=self.help_out)
         self.help.pack(side=LEFT)
-        ToolTip(self.help, text="Shows help. Also analyzes your repo and report when it is not in an normal state and gives tips what to do about it.")
+        ToolTip(self.help, text="Helps you out when you're in trouble. Analyzes your repo and report when it is not in an normal state and gives tips what to do about it.")
+
+        self.menubar = Menu(master)
+
+        self.filemenu = Menu(self.menubar,tearoff=0)
+        self.filemenu.add_command( label='Open Repo ...', command=self.open_button)
+        # ToolTip(self.open, text='Open another git repo to work with.')
+        self.filemenu.add_separator()
+        self.filemenu.add_command( label='Exit', command=master.quit)
+        self.menubar.add_cascade(label='File', menu=self.filemenu)
+
+        self.helpmenu = Menu(self.menubar,tearoff=0)
+        self.helpmenu.add_command( label='Help', command=self.help_browser)
+        self.helpmenu.add_command( label='About Gitconnector', command=self.about)
+        self.menubar.add_cascade(label='Help', menu=self.helpmenu)
+
+        master.config(menu=self.menubar)
 
         # todo: button to launch external tool for history / status-working-tree
 
@@ -149,7 +162,13 @@ class App:
         except Exception as e:
             tkMessageBox.showwarning("error",e)
 
-    def help_button(self):
+    def help_browser(self):
+        tkMessageBox.showinfo("Help","Not implemented yet. Intended to startup browser with git and gitconnector help/manual pages")
+
+    def about(self):
+        tkMessageBox.showinfo("About Gitconnector","gitconnector version " + gitconnector.version())
+
+    def help_out(self):
         try:
             txt = gitconnector.help(explicit=True)
         except Exception as e:
