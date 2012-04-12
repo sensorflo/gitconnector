@@ -106,3 +106,38 @@ todo / ideas
   expect.
 
 - make use of branches dir for a per branch refspec	
+
+- Proposed info text: A gitconnector release/... was interrupted / not finished.
+  However that does not mean anything special. You can continue to work however
+  you want. Most likely you want restart the release/pull/... gitconnector's
+  commands can work with (almost) any state of you're repo; they get their job
+  done, no mather with what repo state they have to start with.
+
+- The idea is to never be stuck / limited to a given dialog. WHEN you have any
+  controll, you have FULL controll. So you always can use whatever tools you
+  would like. It also fits into how git usualy works, there are none (?)
+  interactive commands which keep on working with you while they are running.
+  interactive in git also always mean, you have full controll.
+
+- Gitconnector can work with almost any state anyway. That must be, because on
+  your local repo you can do whatever you want, and use whichever tool you want.
+
+- disabled buttons/menus: tooltip tells why it is disabled
+
+- Copy Paste must be possible everywhere. 
+
+- No label/text/info is ever truncated
+
+1) I want to see what is going on basically. --> I want to see the major steps
+   and their major result.
+
+2) If something fails, I want to know the major cause, and a tip what I should do now.
+
+3) I dont want to remember that info --> log which can be opened again upon
+   request --> current state warning info if current state is not normal
+
+4) If I know git well, or if i am gitconnector developper, I want to find the
+   root of a trouble myself, I want to see more indepth info.
+
+
+
