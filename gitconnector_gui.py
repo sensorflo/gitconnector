@@ -36,6 +36,8 @@ class App:
         # self.text.configure(xscrollcommand=self.text.scrollx.set) 
         # self.text.scrollx.pack(side=BOTTOM,fill=X)
 
+        also_with_other = "You can do the same, maybe even more conveniently, with any other git frontend (tortoiseGit, SmartGit,...)"
+
         self.open = Button(frame, text="open repo", command=self.open_button)
         self.open.pack(side=LEFT)
         ToolTip(self.open, text='Open another git repo to work with.')
@@ -44,13 +46,17 @@ class App:
         ToolTip(self.publish, text='Publish your local work work. Is composed of 1) Commit 2) Pull 3) Make free branch nice 4) Push nice branch. Loosly corresponds to VssConnectors "Build Release"')
         self.commit = Button(frame, text="commit", command=self.commit_button)
         self.commit.pack(side=LEFT)
-        ToolTip(self.commit, text='Commits your local changes of the working tree and/or the index into the current branch.')
+        # todo: change tooltip in case of rebase
+        ToolTip(self.commit, text='This button has multiple functions\n\nWhen labeled commit: Commits your changes of the working tree and/or the index into the current branch.\n\nWhen labeled continue rebase: After you manually resolved merge conflicts while being in a rebase, this continues the rebase.\n\n' + also_with_other )
         self.pull = Button(frame, text="pull", command=self.pull_button)
         self.pull.pack(side=LEFT)
-        ToolTip(self.pull, text='1) Fetches any new commits of the remote repo 2) Merge branch origin/master into your free branch 3) Rebase your nice branch onto origin/master. Loosly corresponds to VssConnectors "Get Latest"')
+        ToolTip(self.pull, text='1) Fetches any new commits of the remote repo 2) Merges branch origin/master into your free branch 3) Rebases (similar to merging) your nice branch onto origin/master. Loosly corresponds to VssConnectors "Get Latest"')
         self.make_nice = Button(frame, text="make branch nice", command=self.make_branch_nice_button)
         self.make_nice.pack(side=LEFT)
-        ToolTip(self.make_nice, text='Creates/updates the nice branch using the free branch. (Technically it is squash merging free into nice)')
+        ToolTip(self.make_nice, text='Creates/updates the nice branch using the free branch. That squashes all (un-verifified) commits of the free branch in one single verified commit on the nice branch. A commit on the nice branch only succeeds if it passes our verification (e.g it must compile).')
+        self.abort = Button(frame, text="abort", command=self.abort_button)
+        self.abort.pack(side=LEFT)
+        ToolTip(self.abort, text="Aborts a running merge / rebase / am (apply-mailbox) and brings you back to the state before the merge / rebase / am. " + also_with_other )
         self.update_status = Button(frame, text="update status", command=self.update_status_button)
         self.update_status.pack(side=LEFT)
         ToolTip(self.update_status, text='Updates the content of the status pane')
@@ -95,7 +101,7 @@ class App:
 
     def commit_button(self):
         try:
-            gitconnector.commit(True)
+            gitconnector.commit_or_continue(explicit=True)
             self.update_status_button()
             tkMessageBox.showinfo("done","done")
         except Exception as e:
@@ -119,13 +125,27 @@ class App:
         except Exception as e:
             tkMessageBox.showwarning("error",e)
 
+    def abort_button(self):        
+        try:
+            gitconnector.abort(explicit=True)
+            self.update_status_button()
+            tkMessageBox.showinfo("done","done")
+        except Exception as e:
+            tkMessageBox.showwarning("error",e)
+
     def update_status_button(self):
         try:
-            txt = gitconnector.get_status_txt()
+            (txt,status) = gitconnector.get_status()
             self.text.config(state=NORMAL)
             self.text.delete("0.0",END)
             self.text.insert(END, txt )
             self.text.config(state=DISABLED)
+            print status
+            if status==git.repo().REBASE:
+                self.commit.config(text = "continue rebase")
+            else:
+                self.commit.config(text = "commit")
+
         except Exception as e:
             tkMessageBox.showwarning("error",e)
 

@@ -234,13 +234,27 @@ def pull(explicit=False):
         repo.checkout(saved_current_branch)
 
 
-def get_status_txt():
+def get_status():
     # todo: emphasise when in merge/rebase conflict
     # todo: use same color for same branch names everywhere, also in graph log
     context = 2
     plural = "s" if context>1 else ""
     repo = git.repo()
-    txt = "--- current branch's friends ---\n"
+    txt = ""
+    status = repo.get_status2()
+    
+    # todo: most gitconnector commands should bark if status is not normal
+    if status != repo.NORMAL:
+        txt += "!!! "
+        if status == repo.REBASE:
+            txt += "Merging within a rebase"
+        elif status == repo.APPLY_MAILBOX:
+            txt += "Merging within a apply mailbox"
+        else:
+            txt += "Merging. Commit when conflicts are resolved."
+        txt += " (help has more info)"    
+        txt += " !!!\n\n"
+    txt += "--- current branch's friends ---\n"
     txt += "current branch         : " + abbrev_ref(repo.current_branch(str_if_none=True)) + "\n"
     txt += "free branch            : " + abbrev_ref(free_branch(str_if_none=True)) + "\n"   # x commits nice-able
     txt += "nice branch            : " + abbrev_ref(nice_branch(str_if_none=True)) + "\n"   # x commits pushable into remot
@@ -259,14 +273,62 @@ def get_status_txt():
     txt += repo.get_status()
     txt += "\n"
     txt += "\n"
-    return txt
+    return txt, status
+
+def abort(explicit=False):
+    # maybe that button can be removed by putting its functionality into 'help (me out)'
+    # or leave the abort button, and place the same functionality alos in help me out
+    repo = git.repo()
+    status = repo.get_status2()
+    if status == repo.NORMAL:
+        tkMessageBox.showinfo("", "Nothing to abort")
+    elif status == repo.MERGE:
+        repo.merge_abort()
+    elif status == repo.REBASE:
+        repo.rebase_abort()
+    elif status == repo.APPLY_MAILBOX:
+        repo.am_abort()
 
 # aka 'sanitize'
 def help(explicit=False):
-    # check_detached_head()
-    msg = "Currently everything seems normal, you don't need  help. " +\
-          "(However I am currently also just a dummy button :-) )."
-    tkMessageBox.showinfo("", msg )
+
+    # - check_detached_head()
+    # - if nice branch is current propose to switch to free branch
+    # - give help if nice branch didn't pass the verification test during commit
+
+    repo = git.repo()
+    status = repo.get_status2()
+    txt = ""
+    title = ""
+    if status == repo.NORMAL:
+        title = "Status normal"
+        txt = "Currently everything seems normal, you don't need  help. "
+    else:    
+        howto_resolve = \
+          "or you resolved them but have not yet commited the result\n\n" +\
+          "Use your favorite git front end (TortoiseGit, SmartGit, ...) to resolve the conflicts.\n\n"
+        after_resolve1 = "After you resolved all conflicts press the "
+        after_resolve2 = "Then you probably need to press again the button you started with in the beginning (e.g. relase, pull, ...).\n\n"
+        if status == repo.REBASE:
+            title = "MERGING WITHIN REBASING"
+            txt += "A git rebase is running and you have to resolve manually merge conflicts,\n"
+            txt += howto_resolve
+            txt += after_resolve1 + 'continue rebase button. ' + after_resolve2
+            txt += "If you are stuck, use abort button to abort the rebase.\n\n"
+        elif status == repo.APPLY_MAILBOX:
+            title = "MERGING WITHIN APPLING MAILBOX"
+            txt += "A git am (apply mailbox) is running and you have to resolve manually merge conflicts,\n"
+            txt += howto_resolve
+            txt += after_resolve1 + 'continue am button. ' + after_resolve2
+            txt += "If you are stuck, use abort button to abort the am.\n\n"
+        else:
+            title = "MERGING"
+            txt += "You have merge conflicts which you need to resolve manually,\n"
+            txt += howto_resolve
+            txt += after_resolve1 + 'commit button. ' + after_resolve2
+            txt += "If you are stuck, use abort button to abort the merge.\n\n"
+
+    tkMessageBox.showinfo(title, txt )
 
 def check_content():
     return
@@ -279,6 +341,16 @@ def check_buildable():
 
 def check_message(message):
     return
+
+def commit_or_continue(explicit=False):
+    repo = git.repo()
+    status = repo.get_status2()
+    if status == repo.NORMAL or status == repo.MERGE:
+        commmit(explicit)
+    elif status == repo.REBASE:
+        repo.rebase_continue()
+    elif status == repo.APPLY_MAILBOX:
+        repo.am_continue()
 
 def commit(explicit=False, ask_when_nice=True):
     # if something is to commit, ask for message can be free if there are

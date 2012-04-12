@@ -40,6 +40,16 @@ class commit:
         return subprocess.check_output([git_binary,"log","--pretty=format:%b", ref_exp])
 
 class repo:    
+    def git_dir(self):
+        """Returns the path of the base of the repository, typically '.git/'"""
+        if 'GIT_DIR' in os.environ:
+            tmp = os.environ['GIT_DIR']
+            if not tmp.endswith('/'):
+                tmp += '/'
+            return tmp
+        else:
+            return '.git/'
+
     def branches(self):
         """Returns local refs/heads (i.e. actually not really branch names)"""
         sha_and_ref = subprocess.check_output([git_binary,"show-ref"]).splitlines()
@@ -113,7 +123,8 @@ class repo:
             raise Exception("git checkout failed")
         
     def merge_squash(self,treeish,commit_msg=None):
-        if subprocess.call([git_binary,"merge","--squash","--no-commit",treeish]):
+        # --no-stat: not needed, and takes a 'long' time (relative to the actual merge).
+        if subprocess.call([git_binary,"merge","--squash","--no-commit","--no-stat",treeish]):
             raise Exception("git merge --squash failed") 
         self.commit(commit_msg=commit_msg)
 
@@ -135,12 +146,29 @@ class repo:
         return
 
     def merge(self,treeish):
-        if subprocess.call([git_binary,"merge","--commit",treeish]):
+        # --no-stat: not needed, and takes a 'long' time (relative to the actual merge).
+        if subprocess.call([git_binary,"merge","--commit","--no-stat",treeish]):
+            raise Exception("git merge failed") 
+
+    def merge_abort(self):
+        if subprocess.call([git_binary,"merge","--abort"]):
             raise Exception("git merge failed") 
 
     def rebase(self,treeish):
-        if subprocess.call([git_binary,"rebase",treeish]):
+        if subprocess.call([git_binary,"rebase","--no-stat",treeish]):
             raise Exception("git rebase failed") 
+
+    def rebase_continue(self):
+        if subprocess.call([git_binary,"rebase","--continue"]):
+            raise Exception("git rebase failed") 
+
+    def rebase_abort(self):
+        if subprocess.call([git_binary,"rebase","--abort"]):
+            raise Exception("git rebase failed") 
+
+    def am_abort(self):
+        if subprocess.call([git_binary,"am","--abort"]):
+            raise Exception("git am failed") 
 
     def push(self,remote=None,refspec=None):
         cmd = [git_binary,"push"]
@@ -178,7 +206,6 @@ class repo:
     def pull(self,remote,refspec):
         # todo: clone if not already exists. however, wasnt that done upon registering?
         # flag 'rewrite-local-commits' decides wheter --rebase is allowed
-        print cmd
         if subprocess.call([git_binary,"pull",remote, refspec]):
             raise Exception("git pull failed")
 
@@ -192,6 +219,22 @@ class repo:
 
     def get_status(self):
         return subprocess.check_output([git_binary,"status"])
+
+    NORMAL = 0
+    MERGE = 1
+    REBASE = 2
+    APPLY_MAILBOX = 3
+
+    def get_status2(self):
+        git_dir = self.git_dir()
+        if os.path.exists(git_dir + "rebase-apply/applying"):
+            return self.APPLY_MAILBOX
+        elif os.path.exists(git_dir + "rebase-apply") or os.path.exists(git_dir + "rebase-merge"):
+            return self.REBASE
+        elif os.path.exists(git_dir + "MERGE_HEAD"):
+            return self.MERGE
+        else:
+            return self.NORMAL
 
     def is_reachable(self,ref):
         # todo: cache
