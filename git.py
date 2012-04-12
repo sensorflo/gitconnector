@@ -3,6 +3,25 @@
 # A wrapper around git (i.e. the git binary). Should be replaced by an existing
 # API binding. See for example
 # http://stackoverflow.com/questions/4034962/which-language-has-the-best-git-api-bindings.
+#
+# Promising solutions:
+# - Using pygit2 (https://github.com/libgit2/pygit2) seems promising, because the underlying 
+#   libgit2 (http://libgit2.github.com/) seems to be a stable API. TortoiseGit also seems to
+#   use libgit2.
+# 
+# Copyright 2012 Florian Kaufmann <sensorflo@gmail.com>
+# 
+# This work is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or any later version.
+# 
+# This work is distributed in the hope that it will be useful, but without any
+# warranty; without even the implied warranty of merchantability or fitness for
+# a particular purpose. See version 2 and version 3 of the GNU General Public
+# License for more details. You should have received a copy of the GNU General
+# Public License along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+
 
 # See file README for what gitconnector is
 
