@@ -21,6 +21,7 @@ import gitconnector
 import os
 import re
 import git
+import webbrowser
 
 # window title shall contain an abbreviated current working directory
 def set_window_title():
@@ -61,7 +62,7 @@ class App:
         self.pull = Button(frame, text="Pull", command=self.pull_button)
         self.pull.pack(side=LEFT)
         ToolTip(self.pull, text='1) Fetches any new commits of the remote repo 2) Merges branch origin/master into your free branch 3) Rebases (similar to merging) your nice branch onto origin/master. Loosly corresponds to VssConnectors "Get Latest"')
-        self.make_nice = Button(frame, text="Make branch nice", command=self.make_branch_nice_button)
+        self.make_nice = Button(frame, text="Make Branch Nice", command=self.make_branch_nice_button)
         self.make_nice.pack(side=LEFT)
         ToolTip(self.make_nice, text='Creates/updates the nice branch using the free branch. That squashes all (un-verifified) commits of the free branch in one single verified commit on the nice branch. A commit on the nice branch only succeeds if it passes our verification (e.g it must compile).')
         self.abort = Button(frame, text="Abort", command=self.abort_button)
@@ -168,15 +169,18 @@ class App:
             self.text.config(state=DISABLED)
             print status
             if status==git.repo().REBASE:
-                self.commit.config(text = "continue rebase")
+                self.commit.config(text = "Continue Rebase")
             else:
-                self.commit.config(text = "commit")
+                self.commit.config(text = "Commit")
 
         except Exception as e:
             tkMessageBox.showwarning("error",e)
 
     def help_browser(self):
-        tkMessageBox.showinfo("Help","Not implemented yet. Intended to startup browser with git and gitconnector help/manual pages")
+        path = os.path.join(GITCONNECTOR_DIR,"gitconnector_tutorial.html")
+        if not os.path.exists(path):
+            tkMessageBox.showerror("error","Could not find " + path)
+        webbrowser.open( path  )
 
     def about(self):
         tkMessageBox.showinfo("About gitconnector",\
@@ -349,6 +353,8 @@ class ToolTip:
 # change working dir if requested
 if len(sys.argv)>=2:
     os.chdir(sys.argv[1])
+
+GITCONNECTOR_DIR = os.path.dirname(sys.argv[0])
 
 root = Tk()
 set_window_title()

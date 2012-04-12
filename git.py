@@ -61,6 +61,7 @@ class commit:
 class repo:    
     def git_dir(self):
         """Returns the path of the base of the repository, typically '.git/'"""
+        # todo: use os.path & co
         if 'GIT_DIR' in os.environ:
             tmp = os.environ['GIT_DIR']
             if not tmp.endswith('/'):
@@ -245,6 +246,7 @@ class repo:
     APPLY_MAILBOX = 3
 
     def get_status2(self):
+        # todo: use os.path & co
         git_dir = self.git_dir()
         if os.path.exists(git_dir + "rebase-apply/applying"):
             return self.APPLY_MAILBOX

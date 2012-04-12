@@ -1,0 +1,257 @@
+// This file is written in AsciiDoc (http://www.methods.co.nz/asciidoc/). The
+// generated HTML output is shown/opened by gitconnector's help menu item.
+
+= Git & gitconnector tutorial for VSS/SVN users
+
+Currently this page is just a sloppy draft and about git exclusively, i.e. it says nothing about gitconnector.
+
+This tutorial assumes you either know VSS or SVN and/or know often used SCM
+terms and concepts.
+
+
+== Terms
+
+Commit(noun):: The state of a single file (VSS) or the whole file-tree (SVN/Git) at a point in history. Git uses the word commit, VSS uses version, SVN uses revision. 
+Commit(verb):: 
+Check in::
+Repository::
+Revision:: See Commit(noun)
+Version:: See Commit(noun)
+Working copy::
+Working tree::
+
+
+== Nomenclature
+
+
+== Start
+
+Git and SVN track state of a tree, VSS tracks state of files. 
+
+Git identifies revisions by SHA1 sums (ask wikipedia). SVN and VSS identifies revision with integers, steadily increasing, starting at 0 (really?).
+
+
+.Clone central repository
+This is a step which has only to be done once. In a distributed VCS everybody has a full repository on its local machine,
+
+----------------------------------------------------------------------
+Central repo:  0--1
+Local repo:    0--1
+                  *
+
+*  SVN|VSS: working revision, no changes to working copy
+   GIT:     master branch,    "
+X  SVN|VSS: working revision, with changes to working copy
+   GIT:     master branch,    "
+R* GIT:     
+----------------------------------------------------------------------
+
+== Simple workflow under simple circumstances
+Despite Git is a distributed SCM it is still possible to have a workflow with a central repository. 
+
+This examples shows how one would work on a feature under simple circumstances. Assume we start with a clean working directory, i.e. we did no changes to our working copy since we last checked in. Also assume our working copy corresponds to the 2nd newest revision in the central repo. 
+
+In SVN/VSS the situation is
+----------------------------------------------------------------------
+Central repo:  0--1--2
+                  *
+----------------------------------------------------------------------
+
+In Git the situation is
+----------------------------------------------------------------------
+Central repo:  0--1--2
+Local repo:    0--1
+                  *
+----------------------------------------------------------------------
+
+.Step 1: Pull (`checkout') from central repo
+In VSS or SVN you would do a checkout to set your working copy to the latest version available in the repo.
+----------------------------------------------------------------------
+Central repo:  0--1--2
+                     *
+----------------------------------------------------------------------
+
+In Git, you do a *pull*, which pulls in any commits from the central repository into your local repository which you don't have yet. In the example, that is commit 2. It also sets your working copy to to the latest commit.
+
+----------------------------------------------------------------------
+Central repo:  0--1--2
+Local repo:    0--1--2
+                     *
+----------------------------------------------------------------------
+
+.Step 2: Edit and commit into local repo
+Now you work on your cool feature. With Git, you can commit your changes into your local repository, thus creating commit 3. There is no analogous step 2 in SVN/VSS, since they have no notion of 'local commits/checkins'.
+
+----------------------------------------------------------------------
+Central repo:  0--1--2
+Local repo:    0--1--2--3
+                        *
+----------------------------------------------------------------------
+
+.Step 3: Push (`checkin') into central repo
+Say you are now finished with the feature or have are in an intermediate state
+which is good enough to share with your colleagues.
+
+In SVN or SVN, you would now do a checkin to create a new version in the central repository which contains your changes.
+----------------------------------------------------------------------
+Central repo:  0--1--2--3
+                        *
+----------------------------------------------------------------------
+
+In Git, you already locally commited your changes in step 2. You now *push* your local commits into the central repository.
+
+----------------------------------------------------------------------
+Central repo:  0--1--2--3
+Local repo:    0--1--2--3
+                        *
+----------------------------------------------------------------------
+
+The end result in the central repository is the same for our needs, in SVN/VSS and in Git. You see, Git allows you to work the same way as you are used to with SVN/VSS if you want to.
+
+
+== Git branches intro
+In Git, branches are extremely lightweight and fast to work with. Thus branches are used very often because they are so convenient. 
+
+A revision graph is a DAG. Each commit has zero or more parents. The initial commit (0 in the examble below) has no parents. 
+
+----------------------------------------------------------------------
+0--1--2--3--6
+    `-4--5-´
+----------------------------------------------------------------------
+
+A branch is actually only a reference/pointer to a certain commit. 
+
+branch/commit with id X in any repo is an identical copy
+
+== Simple workflow under more realistic circumstances
+
+=== Starting with any state
+
+x
+
+=== Others have made changes to the central repo
+
+It is always possible that since pulling (aka checking out) one or more of your colleagues pushed commits to the central repository (aka checked-in). In such a case SVN commit and Git push will abort with an error message. VSS does the checkin and automatically merges as needed. The following does assume that merging can be done fully automaticly, i.e. no merge conflicts have to be resolved by a human. That case is covered in another subchapter.
+
+==== VSS
+
+In VSS the situation is this: Your check out version is 2. You made changes to your working copy, while somebody else checked in on top of version 2 creating version 3. 
+----------------------------------------------------------------------
+Central repo:  0--1--2--3
+                     X
+----------------------------------------------------------------------
+
+VSS allows you to checkin, automaticly merging, creating version 4. Note that this has the disadvantage that you don't even notice that an automatic merge was done, and that the result, whatever it is, is already checked in.
+----------------------------------------------------------------------
+Central repo:  0--1--2--3--4
+                           *
+----------------------------------------------------------------------
+
+==== SVN
+
+In SVN the situation is this: Your working revision is 2. You made changes to your working copy, while somebody else checked in on top of revision 2 creating revision 3. SVN checkin will not succeed because your working revision (2) does not correspond to the latest revision (3).
+----------------------------------------------------------------------
+Central repo:  0--1--2--3
+                     X
+----------------------------------------------------------------------
+
+You need to do a SVN update.  This will merge the changes which revision 3 introduced into your working copy.
+
+----------------------------------------------------------------------
+Central repo:  0--1--2--3
+                        X
+----------------------------------------------------------------------
+
+You now can do an SVN commit which creates revision 4 in the central repo.
+
+----------------------------------------------------------------------
+Central repo:  0--1--2--3--4
+                           *
+----------------------------------------------------------------------
+
+==== Git 
+
+In Git the situation is this: Your remote-master branch is on commit 2. You localy checked in onto your master branch creating commit A. Meanwhile somebody pushed it's new commit into the central repo creating commit 3. Git push will not succeed because your remote-master branch is not at the same commit (it is on 2) as the master branch in the central repo (that is on 3).
+// Remeber that Git identifies commits with SHA1s, not with integers as SVN does. 
+
+----------------------------------------------------------------------
+                        *
+Central repo:  0--1--2--3
+
+Local repo:    0--1--2--A
+                     R  *
+----------------------------------------------------------------------
+
+You need to do a Git pull. This pulls in all commits from the central repo into your local repo onto your remote-master branch. Your remote-master branch is now an identical copy of the master branch on the central repo (++0\--1\--2\--A++). It then merges the remote-master branch into the master branch, creating commit 4.
+
+----------------------------------------------------------------------
+                        *
+Central repo:  0--1--2--3
+
+Local repo:    0--1--2--A--4
+                      `-3-´*
+                        R   
+----------------------------------------------------------------------
+
+You now do a Git push. This time it will not abort because your remote-master and the master in the central repo both are on commit A. Push pushes all your commits you made to the remote-master branch into the central repo. Now your master branch, your remote-master branch and the master branch on the central repo are all identical.  
+----------------------------------------------------------------------
+                           *
+Central repo:  0--1--2--3--4
+                      `-A-´
+
+Local repo:    0--1--2--3--4
+                      `-A-´*
+                           R
+----------------------------------------------------------------------
+
+==== Git & linear history in central repo
+
+Unlike in SVN/VSS central repo, in Git's central repo there is now your commit A, and it is visible that commit 4 is a merge of commit 3 and A. If you prefer that the history in the central repo looks linear as it does in the SVN/VSS case, rebase is your friend. We go back to the Git situation before we did the git pull.
+
+You need to do a git fetch. This is pretty much the same as pull, just without the merging part. You end up having fetched commit 3 from the central repository and thus updating your remote-master branch. Your master branch is unchanged.
+----------------------------------------------------------------------
+                        *
+Central repo:  0--1--2--3
+
+Loc
+al repo:    0--1--2-----A
+                      `-3  *
+                        R   
+----------------------------------------------------------------------
+
+Instead of merging your master branch and your remote-master branch, you can `move'/re-apply all commits from the point (here commit 2) the master branch and the remote-master branch diverged on top of the remote-master branch. Here the only moved/re-applied commit is A. The new commit is not the same commit anymore, thus it naturaly has another id (A2) (another SHA1 within Git), but naturaly still introduces the same changes. The remote-master branch has not changed. But the master branch is now ++...2\--3\--A2++ instead ++...2\--A++.
+// explain or refer to why it is a new commit
+----------------------------------------------------------------------
+                        *
+Central repo:  0--1--2--3
+
+Local repo:    0--1--2--3--A2
+                        R  *
+----------------------------------------------------------------------
+
+Now you can do a push and end up with the same central repository as with SVN/VSS.
+----------------------------------------------------------------------
+                           *
+Central repo:  0--1--2--3--A2
+
+Local repo:    0--1--2--3--A2
+                           *
+                           R
+----------------------------------------------------------------------
+
+==== Summary
+svn update			git pull
+svn commit			git push
+
+
+=== Resolve merge conflicts
+
+foo
+
+=== Incorporate changes from central repo into working copy
+
+foo
+
+=== Multiple local checkins
+
+foo
