@@ -177,7 +177,7 @@ class App:
             tkMessageBox.showwarning("error",e)
 
     def help_browser(self):
-        path = os.path.join(GITCONNECTOR_DIR,"gitconnector_tutorial.html")
+        path = os.path.join(GITCONNECTOR_DIR,"gitcon_tutorial.html")
         if not os.path.exists(path):
             tkMessageBox.showerror("error","Could not find " + path)
         webbrowser.open( path  )

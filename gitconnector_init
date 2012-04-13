@@ -6,7 +6,7 @@
 # export PATH=~/bin/gitconnector:"$PATH"
 
 cd ~/src/gitconnector
-asciidoc gitconnector_tutorial.txt
+asciidoc tutorial.txt
 
 mkdir -p ~/bin/gitconnector/test/
 cd ~/bin/gitconnector/test/
