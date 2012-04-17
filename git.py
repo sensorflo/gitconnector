@@ -29,6 +29,7 @@ import subprocess
 import re
 import os
 import pipes
+import string
 
 git_binary = "/usr/bin/git"
 
@@ -57,6 +58,17 @@ class commit:
         """Returns body of commit message"""
         ref_exp = self.sha1 + "^.." + self.sha1
         return subprocess.check_output([git_binary,"log","--pretty=format:%b", ref_exp])
+
+class cmd:
+    @staticmethod
+    def call(args,raise_exception=True):
+        args = [git_binary] + args
+        print string.join(args)
+        po = subprocess.Popen(args,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+        stdout = po.communicate()[0]
+        if raise_exception and po.returncode:
+            raise Exception( stdout )
+        return po.returncode, stdout
 
 class repo:    
     def git_dir(self):
@@ -142,11 +154,14 @@ class repo:
         if subprocess.call([git_binary,"checkout",treeish]):
             raise Exception("git checkout failed")
         
-    def merge_squash(self,treeish,commit_msg=None):
+    def merge_squash(self,treeish):
         # --no-stat: not needed, and takes a 'long' time (relative to the actual merge).
-        if subprocess.call([git_binary,"merge","--squash","--no-commit","--no-stat",treeish]):
-            raise Exception("git merge --squash failed") 
-        self.commit(commit_msg=commit_msg)
+        (exitcode,stdout) = cmd.call(["merge","--squash","--no-commit","--no-stat",treeish],raise_exception=False)
+        if exitcode:
+            if self.get_status2() == self.MERGE:
+                raise Exception("Automatic squash merge failed. You have to manually fix merge conflicts.")
+            else:
+                raise Exception(stdout)
 
     def commit(self,allow_empty=False,commit_msg=None):
         cmd = [git_binary,"commit","-a"]
@@ -167,11 +182,10 @@ class repo:
 
     def merge(self,treeish):
         # --no-stat: not needed, and takes a 'long' time (relative to the actual merge).
-        if subprocess.call([git_binary,"merge","--commit","--no-stat",treeish]):
-            raise Exception("git merge failed") 
+        cmd.call(["merge","--commit","--no-stat",treeish])
 
     def merge_abort(self):
-        if subprocess.call([git_binary,"merge","--abort"]):
+        if subprocess.call([git_binary,"reset","--merge"]):
             raise Exception("git merge failed") 
 
     def rebase(self,treeish):
@@ -241,18 +255,20 @@ class repo:
         return subprocess.check_output([git_binary,"status"])
 
     NORMAL = 0
-    MERGE = 1
+    MERGE = 1 # including squash merge
     REBASE = 2
     APPLY_MAILBOX = 3
 
     def get_status2(self):
         # todo: use os.path & co
         git_dir = self.git_dir()
-        if os.path.exists(git_dir + "rebase-apply/applying"):
+        if os.path.exists( os.path.join(git_dir,"rebase-apply/applying") ):
             return self.APPLY_MAILBOX
-        elif os.path.exists(git_dir + "rebase-apply") or os.path.exists(git_dir + "rebase-merge"):
+        elif os.path.exists( os.path.join(git_dir, "rebase-apply") ) or \
+             os.path.exists( os.path.join(git_dir, "rebase-merge") ) :
             return self.REBASE
-        elif os.path.exists(git_dir + "MERGE_HEAD"):
+        elif os.path.exists( os.path.join(git_dir, "MERGE_HEAD") ) or \
+             os.path.exists( os.path.join(git_dir, "SQUASH_MSG") ):
             return self.MERGE
         else:
             return self.NORMAL

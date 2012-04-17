@@ -62,32 +62,33 @@ class App:
         self.pull = Button(frame, text="Pull", command=self.pull_button)
         self.pull.pack(side=LEFT)
         ToolTip(self.pull, text='1) Fetches any new commits of the remote repo 2) Merges branch origin/master into your free branch 3) Rebases (similar to merging) your nice branch onto origin/master. Loosly corresponds to VssConnectors "Get Latest"')
-        self.make_nice = Button(frame, text="Make Branch Nice", command=self.make_branch_nice_button)
-        self.make_nice.pack(side=LEFT)
-        ToolTip(self.make_nice, text='Creates/updates the nice branch using the free branch. That squashes all (un-verifified) commits of the free branch in one single verified commit on the nice branch. A commit on the nice branch only succeeds if it passes our verification (e.g it must compile).')
         self.abort = Button(frame, text="Abort", command=self.abort_button)
         self.abort.pack(side=LEFT)
         ToolTip(self.abort, text="Aborts a running merge / rebase / am (apply-mailbox) and brings you back to the state before the merge / rebase / am. " + also_with_other )
         self.update_status = Button(frame, text="Update Status", command=self.update_status_button)
         self.update_status.pack(side=LEFT)
         ToolTip(self.update_status, text='Updates the content of the status pane')
-        self.help = Button(frame, text="Help Out", command=self.help_out)
-        self.help.pack(side=LEFT)
-        ToolTip(self.help, text="Helps you out when you're in trouble. Analyzes your repo and report when it is not in an normal state and gives tips what to do about it.")
 
         self.menubar = Menu(master)
 
         self.filemenu = Menu(self.menubar,tearoff=0)
         self.filemenu.add_command( label='Open Repo ...', command=self.open_button)
-        # ToolTip(self.open, text='Open another git repo to work with.')
         self.filemenu.add_separator()
         self.filemenu.add_command( label='Exit', command=master.quit)
         self.menubar.add_cascade(label='File', menu=self.filemenu)
+        ToolTip(self.filemenu, text='Open Repo ...: Open another git repo to work with.')
+
+        self.advancedmenu = Menu(self.menubar,tearoff=0)
+        self.advancedmenu.add_command( label='Make Branch Nice', command=self.make_branch_nice_button)
+        self.menubar.add_cascade(label='Advanced', menu=self.advancedmenu)
+        ToolTip(self.advancedmenu, text='Make Branch Nice: Creates/updates the nice branch using the free branch. That squashes all (un-verifified) commits of the free branch in one single verified commit on the nice branch. A commit on the nice branch only succeeds if it passes our verification (e.g it must compile).')
 
         self.helpmenu = Menu(self.menubar,tearoff=0)
-        self.helpmenu.add_command( label='Help', command=self.help_browser)
+        self.helpmenu.add_command( label='Help Out', command=self.help_out)
+        self.helpmenu.add_command( label='gitconnector Help', command=self.help_browser)
         self.helpmenu.add_command( label='About Gitconnector', command=self.about)
         self.menubar.add_cascade(label='Help', menu=self.helpmenu)
+        ToolTip(self.helpmenu, text="Help Out: Helps you out when you're in trouble. Analyzes your repo and report when it is not in an normal state and gives tips what to do about it.\n\ngitconnector Help: Shows the gitconnector manual in your browser.")
 
         master.config(menu=self.menubar)
 
@@ -115,6 +116,7 @@ class App:
             set_window_title()
             self.update_status_button()
         except Exception as e:
+            self.update_status_button()
             tkMessageBox.showwarning("error",e)
 
     # as the old 'release'
@@ -124,6 +126,7 @@ class App:
             self.update_status_button()
             tkMessageBox.showinfo("done","done")
         except Exception as e:
+            self.update_status_button()
             tkMessageBox.showwarning("error",e)
 
     def commit_button(self):
@@ -140,6 +143,7 @@ class App:
             self.update_status_button()
             tkMessageBox.showinfo("done","done")
         except Exception as e:
+            self.update_status_button()
             tkMessageBox.showwarning("error",e)
 
     # aka the old 'get'
@@ -150,6 +154,7 @@ class App:
             self.update_status_button()
             tkMessageBox.showinfo("done","done")
         except Exception as e:
+            self.update_status_button()
             tkMessageBox.showwarning("error",e)
 
     def abort_button(self):        
@@ -158,6 +163,7 @@ class App:
             self.update_status_button()
             tkMessageBox.showinfo("done","done")
         except Exception as e:
+            self.update_status_button()
             tkMessageBox.showwarning("error",e)
 
     def update_status_button(self):
@@ -167,7 +173,6 @@ class App:
             self.text.delete("0.0",END)
             self.text.insert(END, txt )
             self.text.config(state=DISABLED)
-            print status
             if status==git.repo().REBASE:
                 self.commit.config(text = "Continue Rebase")
             else:
@@ -191,7 +196,9 @@ class App:
     def help_out(self):
         try:
             txt = gitconnector.help(explicit=True)
+            self.update_status_button()
         except Exception as e:
+            self.update_status_button()
             tkMessageBox.showwarning("error",e)
 
 

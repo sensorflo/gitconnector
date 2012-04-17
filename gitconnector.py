@@ -298,12 +298,15 @@ def abort(explicit=False):
     status = repo.get_status2()
     if status == repo.NORMAL:
         tkMessageBox.showinfo("", "Nothing to abort")
-    elif status == repo.MERGE:
-        repo.merge_abort()
-    elif status == repo.REBASE:
-        repo.rebase_abort()
-    elif status == repo.APPLY_MAILBOX:
-        repo.am_abort()
+    else:    
+        if tkMessageBox.askokcancel("Confirm abort","Aborting means you loose your changes to your working tree and your index. Working tree and index will be reset to the commit you started the merge/rebase with.")==0:
+            raise Exception("Aborted by user")
+        if status == repo.MERGE:
+            repo.merge_abort()
+        elif status == repo.REBASE:
+            repo.rebase_abort()
+        elif status == repo.APPLY_MAILBOX:
+            repo.am_abort()
 
 # aka 'sanitize'
 def help(explicit=False):
@@ -317,8 +320,19 @@ def help(explicit=False):
     txt = ""
     title = ""
     if status == repo.NORMAL:
-        title = "Status normal"
-        txt = "Currently everything seems normal, you don't need  help. "
+        if is_nice_branch( repo.current_branch() ):
+            title = "current branch is the nice branch"
+            txt = "Your current branch is the nice branch. Normally the current branch should be the free branch. "
+            if not repo.has_local_changes():
+                txt += "Shall I switch to the free branch?"
+                if tkMessageBox.askyesno(title, txt )!=0:
+                    repo.checkout(free_branch(allow_create=True))
+                return # !!!!!!!!!!!!!!!!!!!!!
+            else:
+                txt += "Since you have changes to your working tree and/or index I can't offer to switch to the free branch. You first have either to commit your changes or reset them."
+        else:    
+            title = "Status normal"
+            txt = "Currently everything seems normal, you don't need help. "
     else:    
         howto_resolve = \
           "or you resolved them but have not yet commited the result\n\n" +\
@@ -362,7 +376,7 @@ def commit_or_continue(explicit=False):
     repo = git.repo()
     status = repo.get_status2()
     if status == repo.NORMAL or status == repo.MERGE:
-        commmit(explicit)
+        commit(explicit)
     elif status == repo.REBASE:
         repo.rebase_continue()
     elif status == repo.APPLY_MAILBOX:
@@ -493,10 +507,10 @@ def make_branch_nice(explicit=False):
     # actually do it
     elif has_diffs:
         repo.checkout(nice)
-        repo.merge_squash(free,commit_msg=help_msg)
-        msg = "Making-nice was successfull. Will now commit the new nice commit."
-        tkMessageBox.showinfo("", msg)
-        repo.commit()
+        repo.merge_squash(free)
+        msg = "Making free branch nice was successfull. Will now commit the new nice commit."
+        tkMessageBox.showinfo("Commiting", msg)
+        repo.commit(commit_msg=help_msg)
 
     if explicit:
         repo.checkout(saved_current_branch)
