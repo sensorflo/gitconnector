@@ -84,11 +84,11 @@ class App:
         ToolTip(self.advancedmenu, text='Make Branch Nice: Creates/updates the nice branch using the free branch. That squashes all (un-verifified) commits of the free branch in one single verified commit on the nice branch. A commit on the nice branch only succeeds if it passes our verification (e.g it must compile).')
 
         self.helpmenu = Menu(self.menubar,tearoff=0)
-        self.helpmenu.add_command( label='Help Out', command=self.help_out)
+        self.helpmenu.add_command( label='Sanitize', command=self.sanitize)
         self.helpmenu.add_command( label='gitconnector Help', command=self.help_browser)
         self.helpmenu.add_command( label='About Gitconnector', command=self.about)
         self.menubar.add_cascade(label='Help', menu=self.helpmenu)
-        ToolTip(self.helpmenu, text="Help Out: Helps you out when you're in trouble. Analyzes your repo and report when it is not in an normal state and gives tips what to do about it.\n\ngitconnector Help: Shows the gitconnector manual in your browser.")
+        ToolTip(self.helpmenu, text="Sanitize: Helps you out when you're in trouble. Analyzes your repo and report when it is not in an normal state and gives tips what to do about it.\n\ngitconnector Help: Shows the gitconnector manual in your browser.")
 
         master.config(menu=self.menubar)
 
@@ -124,7 +124,6 @@ class App:
         try:
             gitconnector.publish(explicit=True)
             self.update_status_button()
-            tkMessageBox.showinfo("done","done")
         except Exception as e:
             self.update_status_button()
             tkMessageBox.showwarning("error",e)
@@ -133,7 +132,6 @@ class App:
         try:
             gitconnector.commit_or_continue(explicit=True)
             self.update_status_button()
-            tkMessageBox.showinfo("done","done")
         except Exception as e:
             tkMessageBox.showwarning("error",e)
 
@@ -141,7 +139,6 @@ class App:
         try:
             gitconnector.make_branch_nice(explicit=True)
             self.update_status_button()
-            tkMessageBox.showinfo("done","done")
         except Exception as e:
             self.update_status_button()
             tkMessageBox.showwarning("error",e)
@@ -152,7 +149,6 @@ class App:
         try:
             gitconnector.pull(explicit=True)
             self.update_status_button()
-            tkMessageBox.showinfo("done","done")
         except Exception as e:
             self.update_status_button()
             tkMessageBox.showwarning("error",e)
@@ -161,7 +157,6 @@ class App:
         try:
             gitconnector.abort(explicit=True)
             self.update_status_button()
-            tkMessageBox.showinfo("done","done")
         except Exception as e:
             self.update_status_button()
             tkMessageBox.showwarning("error",e)
@@ -173,8 +168,10 @@ class App:
             self.text.delete("0.0",END)
             self.text.insert(END, txt )
             self.text.config(state=DISABLED)
-            if status==git.repo().REBASE:
+            if status & git.repo().REBASE:
                 self.commit.config(text = "Continue Rebase")
+            elif status & git.repo().APPLY_MAILBOX:
+                self.commit.config(text = "Continue am")
             else:
                 self.commit.config(text = "Commit")
 
@@ -193,9 +190,9 @@ class App:
             "Copyright: 2012 gitconnector developper team\n\n"
             "License: GNU General Public License Version 2")
 
-    def help_out(self):
+    def sanitize(self):
         try:
-            txt = gitconnector.help(explicit=True)
+            gitconnector.sanitize(explicit=True)
             self.update_status_button()
         except Exception as e:
             self.update_status_button()

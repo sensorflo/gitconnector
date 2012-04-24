@@ -28,7 +28,6 @@
 import subprocess
 import re
 import os
-import pipes
 import string
 
 git_binary = "/usr/bin/git"
@@ -158,7 +157,7 @@ class repo:
         # --no-stat: not needed, and takes a 'long' time (relative to the actual merge).
         (exitcode,stdout) = cmd.call(["merge","--squash","--no-commit","--no-stat",treeish],raise_exception=False)
         if exitcode:
-            if self.get_status2() == self.MERGE:
+            if self.get_status2() & self.MERGE:
                 raise Exception("Automatic squash merge failed. You have to manually fix merge conflicts.")
             else:
                 raise Exception(stdout)
@@ -204,6 +203,10 @@ class repo:
         if subprocess.call([git_binary,"am","--abort"]):
             raise Exception("git am failed") 
 
+    def bisect_abort(self):
+        if subprocess.call([git_binary,"bisect","reset"]):
+            raise Exception("git bisect failed") 
+    
     def push(self,remote=None,refspec=None):
         cmd = [git_binary,"push"]
         if not remote:
@@ -257,21 +260,25 @@ class repo:
     NORMAL = 0
     MERGE = 1 # including squash merge
     REBASE = 2
-    APPLY_MAILBOX = 3
+    APPLY_MAILBOX = 4
+    BISECT = 8
 
     def get_status2(self):
-        # todo: use os.path & co
         git_dir = self.git_dir()
+        status = self.NORMAL
+        # I don't know which can co-exist and which are mutually exclusive. I
+        # assume only bisect can coexist with others
         if os.path.exists( os.path.join(git_dir,"rebase-apply/applying") ):
-            return self.APPLY_MAILBOX
+            status = status | self.APPLY_MAILBOX
         elif os.path.exists( os.path.join(git_dir, "rebase-apply") ) or \
              os.path.exists( os.path.join(git_dir, "rebase-merge") ) :
-            return self.REBASE
+            status = status | self.REBASE
         elif os.path.exists( os.path.join(git_dir, "MERGE_HEAD") ) or \
              os.path.exists( os.path.join(git_dir, "SQUASH_MSG") ):
-            return self.MERGE
-        else:
-            return self.NORMAL
+            status = status | self.MERGE
+        if os.path.exists( os.path.join(git_dir,"BISECT_START") ):
+            status = status | self.BISECT
+        return status   
 
     def is_reachable(self,ref):
         # todo: cache

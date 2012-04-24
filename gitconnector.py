@@ -15,7 +15,6 @@
 # Public License along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-import subprocess
 import re
 import git
 import tkMessageBox
@@ -116,9 +115,9 @@ def check_detached_head():
 
 def publish(explicit=False):
     repo = git.repo()
-    has_local_changes = repo.has_local_changes()
+    # has_local_changes = repo.has_local_changes()
     # ahead = (repo.commits_ahead(repo.current_branch(),remote_branch)!=0)
-    is_alreay_nice = False
+    # is_alreay_nice = False
 
     check_detached_head()
 
@@ -132,7 +131,7 @@ def publish(explicit=False):
     #     tkMessageBox.showinfo("", msg )
     #     raise Exception("Aborted");
 
-    # directly commit to nice branch if possible / avoid commiting to free
+    # directly commit to nice branch if possible / avoid committing to free
     # branch which will then have only one commit, which is stupid (but not an
     # error)
     # elif has_local_changes and not ahead:
@@ -163,13 +162,13 @@ def publish(explicit=False):
         # todo: only call pull for free
         # todo: what happens if we got interrupted before (e.g. merge conflicts)?
         if not (free_branch_cleanup==DELETE_FREE or free_branch_cleanup==RESET_FREE_NO_BAK):
-           repo.checkout(free)
-           repo.merge(remote_branch())
+            repo.checkout(free)
+            repo.merge(remote_branch())
 
         if free_branch_cleanup==RESET_FREE_WITH_BAK or free_branch_cleanup==RESET_FREE_NO_BAK:
             if free_branch_cleanup==RESET_FREE_WITH_BAK and not repo.is_reachable( free ):
                 repo.create_branch( unique_branch_name( free ), free)
-            # todo: if it is not the current branch, dont use checkout
+            # todo: if it is not the current branch, don't use checkout
             repo.checkout(free)    
             if not repo.has_local_changes():
                 repo.reset(remote_branch(),"hard")
@@ -191,7 +190,7 @@ def publish(explicit=False):
     if nice and delete_nice_after_push:
         # todo: only if the commit referenced by nice is referenced by something else
         #       however since we just pushed it into remote, that should always be the case
-        # todo: first checkout free (hmm, is done aboth), or go into detached head
+        # todo: first checkout free (hmm, is done above), or go into detached head
         free_sha1 = repo.get_sha1(free) if free else None
         nice_sha1 = repo.get_sha1(nice)
         if nice_sha1==free_sha1:
@@ -240,7 +239,7 @@ def pull(explicit=False):
 
     # rebase nice branch onto (updated) remote branch
     # todo: what if the above pull fails? Then the nice_branch is not rebased which leads to troubles later
-    # todo: should be done automatically within pull if nice-brancg is setuped correctly
+    # todo: should be done automatically within pull if nice-branch is setuped correctly
     nice = nice_branch() 
     if nice:
         repo.checkout(nice)
@@ -251,30 +250,33 @@ def pull(explicit=False):
 
 
 def get_status():
-    # todo: emphasise when in merge/rebase conflict
+    # todo: emphasize when in merge/rebase conflict
     # todo: use same color for same branch names everywhere, also in graph log
     context = 2
-    plural = "s" if context>1 else ""
     repo = git.repo()
     txt = ""
     status = repo.get_status2()
     
     # todo: most gitconnector commands should bark if status is not normal
     if status != repo.NORMAL:
+        # todo: being in a rebase/am does not necessarily mean that we have merge 
+        # conflicts. that need to be an extra flag
         txt += "!!! "
-        if status == repo.REBASE:
-            txt += "Merging within a rebase"
-        elif status == repo.APPLY_MAILBOX:
-            txt += "Merging within a apply mailbox"
-        else:
-            txt += "Merging. Commit when conflicts are resolved."
-        txt += " (help has more info)"    
+        if status & repo.REBASE:
+            txt += "Within a rebase. "
+        elif status & repo.APPLY_MAILBOX:
+            txt += "Within an apply mailbox. "
+        elif status & repo.MERGE:
+            txt += "Within a merge. "
+        if status & repo.BISECT:
+            txt += "Within a bisect. "            
+        txt += "(Menu Help/Sanitize has more info)"    
         txt += " !!!\n\n"
     txt += "--- current branch's friends ---\n"
     txt += "current branch         : " + abbrev_ref(repo.current_branch(str_if_none=True)) + "\n"
     txt += "free branch            : " + abbrev_ref(free_branch(str_if_none=True)) + "\n"   # x commits nice-able
-    txt += "nice branch            : " + abbrev_ref(nice_branch(str_if_none=True)) + "\n"   # x commits pushable into remot
-    txt += "remote tracking branch : " + abbrev_ref(remote_branch(str_if_none=True)) + "\n" # x commits ahaed
+    txt += "nice branch            : " + abbrev_ref(nice_branch(str_if_none=True)) + "\n"   # x commits pushable into remote
+    txt += "remote tracking branch : " + abbrev_ref(remote_branch(str_if_none=True)) + "\n" # x commits ahead
     txt += "\n"
     txt += "log extract:\n"
     txt += repo.get_log_graph(remote_branch(),nice_branch(),free_branch(),context)
@@ -283,7 +285,7 @@ def get_status():
     # txt += "\npushable nice commits:\n"
     # txt += repo.
 
-    # comes last because it can be arbitrarly long
+    # comes last because it can be arbitrarily long
     txt += "\n"
     txt += "--- status of index and working tree ---\n" 
     txt += repo.get_status()
@@ -293,23 +295,25 @@ def get_status():
 
 def abort(explicit=False):
     # maybe that button can be removed by putting its functionality into 'help (me out)'
-    # or leave the abort button, and place the same functionality alos in help me out
+    # or leave the abort button, and place the same functionality also in help me out
     repo = git.repo()
     status = repo.get_status2()
     if status == repo.NORMAL:
-        tkMessageBox.showinfo("", "Nothing to abort")
+        tkMessageBox.showinfo("", "No merge, rebase, apply-mailbox, or bisect to abort.")
     else:    
         if tkMessageBox.askokcancel("Confirm abort","Aborting means you loose your changes to your working tree and your index. Working tree and index will be reset to the commit you started the merge/rebase with.")==0:
             raise Exception("Aborted by user")
-        if status == repo.MERGE:
+        if status & repo.MERGE:
             repo.merge_abort()
-        elif status == repo.REBASE:
+        elif status & repo.REBASE:
             repo.rebase_abort()
-        elif status == repo.APPLY_MAILBOX:
+        elif status & repo.APPLY_MAILBOX:
             repo.am_abort()
+        elif status & repo.BISECT:
+            repo.bisect_abort();
+     
 
-# aka 'sanitize'
-def help(explicit=False):
+def sanitize(explicit=False):
 
     # - check_detached_head()
     # - if nice branch is current propose to switch to free branch
@@ -335,29 +339,33 @@ def help(explicit=False):
             txt = "Currently everything seems normal, you don't need help. "
     else:    
         howto_resolve = \
-          "or you resolved them but have not yet commited the result\n\n" +\
+          "or you resolved them but have not yet committed the result\n\n" +\
           "Use your favorite git front end (TortoiseGit, SmartGit, ...) to resolve the conflicts.\n\n"
         after_resolve1 = "After you resolved all conflicts press the "
         after_resolve2 = "Then you probably need to press again the button you started with in the beginning (e.g. relase, pull, ...).\n\n"
-        if status == repo.REBASE:
+        if status & repo.REBASE:
             title = "MERGING WITHIN REBASING"
             txt += "A git rebase is running and you have to resolve manually merge conflicts,\n"
             txt += howto_resolve
             txt += after_resolve1 + 'continue rebase button. ' + after_resolve2
             txt += "If you are stuck, use abort button to abort the rebase.\n\n"
-        elif status == repo.APPLY_MAILBOX:
+        elif status & repo.APPLY_MAILBOX:
             title = "MERGING WITHIN APPLING MAILBOX"
             txt += "A git am (apply mailbox) is running and you have to resolve manually merge conflicts,\n"
             txt += howto_resolve
             txt += after_resolve1 + 'continue am button. ' + after_resolve2
             txt += "If you are stuck, use abort button to abort the am.\n\n"
-        else:
+        elif status & repo.MERGE:
             title = "MERGING"
             txt += "You have merge conflicts which you need to resolve manually,\n"
             txt += howto_resolve
             txt += after_resolve1 + 'commit button. ' + after_resolve2
             txt += "If you are stuck, use abort button to abort the merge.\n\n"
-
+        if status & repo.BISECT:
+            title += " BISECTING"
+            txt += "You are in the middle of a bisect. Use you're favorite git "
+            txt += "frontend to continue or end the bisect."
+            
     tkMessageBox.showinfo(title, txt )
 
 def check_content():
@@ -375,12 +383,12 @@ def check_message(message):
 def commit_or_continue(explicit=False):
     repo = git.repo()
     status = repo.get_status2()
-    if status == repo.NORMAL or status == repo.MERGE:
-        commit(explicit)
-    elif status == repo.REBASE:
+    if status & repo.REBASE:
         repo.rebase_continue()
-    elif status == repo.APPLY_MAILBOX:
+    elif status & repo.APPLY_MAILBOX:
         repo.am_continue()
+    else: # inclues NORMAL, MERGE, BISECT
+        commit(explicit)
 
 def commit(explicit=False, ask_when_nice=True):
     # if something is to commit, ask for message can be free if there are
@@ -545,9 +553,9 @@ def is_nice_branch(branch=None):
 # see man page githooks(5)
 def pre_commit_hook():
     if is_nice_branch():
-      print "git-dragon: a nice branch, checking commit. nice_branch_regex = '" + nice_branch_regex + "'"
+        print "git-dragon: a nice branch, checking commit. nice_branch_regex = '" + nice_branch_regex + "'"
     else:
-      print "git-dragon: not a nice branch, not doing anything. nice_branch_regex = '" + nice_branch_regex + "'"
+        print "git-dragon: not a nice branch, not doing anything. nice_branch_regex = '" + nice_branch_regex + "'"
     return 0
 
 # see man page githooks(5)
@@ -556,7 +564,6 @@ def prepare_commit_msg_hook(args):
     # with the correct one in the no --no-verify case
     if is_nice_branch():
         filename = args[0]
-        msg_src = args[1] if len(args)>=1 else None
         f = open(filename, 'r+')
         msg = f.read()
 
